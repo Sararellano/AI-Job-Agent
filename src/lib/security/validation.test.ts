@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  inferJobSourceFromUrl,
   isAllowedCvUpload,
   isValidApplicationStatus,
+  isValidJobUrl,
   isValidQuestionAnswer,
   isValidUuid,
+  normalizeJobUrl,
   resolveTemplateId,
+  sanitizeJobInput,
   sanitizeQuestionAnswers,
   sanitizeText,
 } from "@/lib/security/validation";
@@ -76,5 +80,66 @@ describe("isAllowedCvUpload", () => {
     expect(isAllowedCvUpload("application/pdf", "resume.pdf")).toBe(true);
     expect(isAllowedCvUpload("application/pdf", "resume.exe")).toBe(false);
     expect(isAllowedCvUpload("text/plain", "resume.pdf")).toBe(false);
+  });
+});
+
+describe("normalizeJobUrl", () => {
+  it("accepts https urls and strips trailing slash", () => {
+    expect(
+      normalizeJobUrl("https://boards.greenhouse.io/acme/jobs/123/")
+    ).toBe("https://boards.greenhouse.io/acme/jobs/123");
+  });
+
+  it("rejects unsafe protocols", () => {
+    expect(normalizeJobUrl("javascript:alert(1)")).toBeNull();
+    expect(normalizeJobUrl("ftp://example.com/job")).toBeNull();
+  });
+});
+
+describe("isValidJobUrl", () => {
+  it("validates normalized http(s) urls", () => {
+    expect(isValidJobUrl("https://jobs.lever.co/acme/abc")).toBe(true);
+    expect(isValidJobUrl("not-a-url")).toBe(false);
+  });
+});
+
+describe("inferJobSourceFromUrl", () => {
+  it("detects known ATS hosts", () => {
+    expect(
+      inferJobSourceFromUrl("https://boards.greenhouse.io/acme/jobs/1")
+    ).toBe("greenhouse");
+    expect(inferJobSourceFromUrl("https://jobs.lever.co/acme/abc")).toBe(
+      "lever"
+    );
+    expect(inferJobSourceFromUrl("https://www.linkedin.com/jobs/view/1")).toBe(
+      "linkedin"
+    );
+  });
+});
+
+describe("sanitizeJobInput", () => {
+  it("returns sanitized payload for valid input", () => {
+    const result = sanitizeJobInput({
+      title: " Frontend Dev ",
+      company: "Acme",
+      description: "Build UI",
+      url: "https://jobs.lever.co/acme/role/",
+      requirements: "React",
+    });
+
+    expect(result).toEqual({
+      title: "Frontend Dev",
+      company: "Acme",
+      description: "Build UI",
+      url: "https://jobs.lever.co/acme/role",
+      source: "lever",
+      summary: null,
+      salary: null,
+      requirements: "React",
+    });
+  });
+
+  it("returns null when required fields are missing", () => {
+    expect(sanitizeJobInput({ title: "Dev" })).toBeNull();
   });
 });

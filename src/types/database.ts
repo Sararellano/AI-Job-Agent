@@ -1,5 +1,16 @@
 export type ApplicationStatus = "pending" | "applied" | "interview" | "rejected";
 
+export type JobSource =
+  | "greenhouse"
+  | "lever"
+  | "remoteok"
+  | "linkedin"
+  | "infojobs"
+  | "workable"
+  | "wellfound"
+  | "manual"
+  | "other";
+
 export interface Job {
   id: string;
   title: string;
@@ -9,7 +20,19 @@ export interface Job {
   salary: string | null;
   url: string | null;
   source: string | null;
+  requirements: string | null;
   created_at: string;
+}
+
+export interface CreateJobInput {
+  title: string;
+  company: string;
+  description: string;
+  url: string;
+  source?: JobSource | null;
+  summary?: string | null;
+  salary?: string | null;
+  requirements?: string | null;
 }
 
 export interface JobApplication {

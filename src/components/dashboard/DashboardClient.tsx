@@ -13,6 +13,7 @@ import {
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
 import { DefaultInstructionsSection } from "@/components/dashboard/DefaultInstructionsSection";
+import { AddJobForm } from "@/components/dashboard/AddJobForm";
 import { JobOfferCard } from "@/components/dashboard/JobOfferCard";
 
 interface DashboardClientProps {
@@ -51,6 +52,10 @@ export function DashboardClient({
   const [coverTemplateDefault, setCoverTemplateDefault] = useState(
     defaultCoverTemplateId
   );
+
+  function handleJobAdded(job: JobWithApplication) {
+    setJobs((prev) => [{ ...job, application: null }, ...prev]);
+  }
 
   function handleApplicationUpdate(
     jobId: string,
@@ -151,6 +156,10 @@ export function DashboardClient({
           }}
         />
       </div>
+
+      <AddJobForm
+        onJobAdded={(job) => handleJobAdded({ ...job, application: null })}
+      />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Mail, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Mail, ExternalLink, ChevronDown, ChevronUp, Send } from "lucide-react";
 import type { JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
 import {
@@ -66,6 +66,7 @@ export function JobOfferCard({
   const coverData = parseCoverLetterContent(
     job.application?.cover_letter_content ?? null
   );
+  const documentsReady = Boolean(cvData && coverData);
 
   async function handleStatusChange(status: string) {
     const res = await fetch("/api/applications/status", {
@@ -172,6 +173,26 @@ export function JobOfferCard({
 
         {(cvData || coverData) && (
           <div className="mt-4 space-y-4">
+            {job.url && (
+              <div className="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-4">
+                <p className="text-sm text-[var(--color-muted)]">
+                  {documentsReady ? t("job.applyReady") : t("job.applyMissingDocs")}
+                </p>
+                <a
+                  href={job.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  <Send className="h-4 w-4" />
+                  {t("job.applyOnPortal")}
+                  <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                </a>
+                <p className="mt-2 text-xs text-[var(--color-muted)]">
+                  {t("job.applyHint")}
+                </p>
+              </div>
+            )}
             {cvData && (
               <DocumentPreviewPanel
                 type="cv"
