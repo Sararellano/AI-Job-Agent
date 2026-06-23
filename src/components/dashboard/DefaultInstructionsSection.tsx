@@ -1,0 +1,190 @@
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
+import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
+import type { UserProfile } from "@/types/documents";
+import {
+  CV_TEMPLATES,
+  COVER_LETTER_TEMPLATES,
+  DEFAULT_CV_TEMPLATE,
+  DEFAULT_COVER_TEMPLATE,
+} from "@/types/documents";
+
+interface DefaultInstructionsSectionProps {
+  initialProfile: UserProfile;
+  initialCvInstructions: string;
+  initialCoverLetterInstructions: string;
+  initialCvPhotoUrl?: string | null;
+  initialCoverLetterPhotoUrl?: string | null;
+  initialCvTemplateId?: string;
+  initialCoverTemplateId?: string;
+  onSaved?: (data: {
+    profile: UserProfile;
+    cv: string;
+    cover: string;
+    cvPhoto: string | null;
+    coverPhoto: string | null;
+    cvTemplateId: string;
+    coverTemplateId: string;
+  }) => void;
+}
+
+/**
+ * Dashboard section for shared profile, default instructions and templates.
+ */
+export function DefaultInstructionsSection({
+  initialProfile,
+  initialCvInstructions,
+  initialCoverLetterInstructions,
+  initialCvPhotoUrl = null,
+  initialCoverLetterPhotoUrl = null,
+  initialCvTemplateId = DEFAULT_CV_TEMPLATE,
+  initialCoverTemplateId = DEFAULT_COVER_TEMPLATE,
+  onSaved,
+}: DefaultInstructionsSectionProps) {
+  const [profile, setProfile] = useState(initialProfile);
+  const [cvInstructions, setCvInstructions] = useState(initialCvInstructions);
+  const [coverLetterInstructions, setCoverLetterInstructions] = useState(
+    initialCoverLetterInstructions
+  );
+  const [cvPhotoUrl, setCvPhotoUrl] = useState<string | null>(initialCvPhotoUrl);
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(
+    initialCoverLetterPhotoUrl
+  );
+  const [cvTemplateId, setCvTemplateId] = useState(initialCvTemplateId);
+  const [coverTemplateId, setCoverTemplateId] = useState(initialCoverTemplateId);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setMessage(null);
+
+    const res = await fetch("/api/settings/instructions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile,
+        default_cv_instructions: cvInstructions,
+        default_cover_letter_instructions: coverLetterInstructions,
+        default_cv_photo_url: cvPhotoUrl,
+        default_cover_letter_photo_url: coverPhotoUrl,
+        default_cv_template_id: cvTemplateId,
+        default_cover_letter_template_id: coverTemplateId,
+      }),
+    });
+
+    setSaving(false);
+
+    if (res.ok) {
+      setMessage("Profile and defaults saved.");
+      onSaved?.({
+        profile,
+        cv: cvInstructions,
+        cover: coverLetterInstructions,
+        cvPhoto: cvPhotoUrl,
+        coverPhoto: coverPhotoUrl,
+        cvTemplateId,
+        coverTemplateId,
+      });
+    } else {
+      const data = (await res.json()) as { error?: string };
+      setMessage(data.error ?? "Failed to save.");
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+      <h2 className="mb-1 text-lg font-semibold">Profile &amp; default instructions</h2>
+      <p className="mb-5 text-sm text-[var(--color-muted)]">
+        Shared info and defaults for every offer. Override per offer when generating.
+      </p>
+
+      <UserProfileSection profile={profile} onChange={setProfile} />
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div>
+          <label htmlFor="default-cv" className="mb-2 block text-sm font-medium">
+            CV instructions
+          </label>
+          <select
+            value={cvTemplateId}
+            onChange={(e) => setCvTemplateId(e.target.value)}
+            className="mb-2 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+          >
+            {CV_TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} — {t.description}
+              </option>
+            ))}
+          </select>
+          <textarea
+            id="default-cv"
+            rows={5}
+            value={cvInstructions}
+            onChange={(e) => setCvInstructions(e.target.value)}
+            placeholder="e.g. Professional layout, highlight React experience..."
+            className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          />
+          <PhotoUploadField
+            label="Default CV photo"
+            storagePath="default-cv"
+            photoUrl={cvPhotoUrl}
+            onPhotoChange={setCvPhotoUrl}
+            disabled={saving}
+          />
+        </div>
+        <div>
+          <label htmlFor="default-cover" className="mb-2 block text-sm font-medium">
+            Cover letter instructions
+          </label>
+          <select
+            value={coverTemplateId}
+            onChange={(e) => setCoverTemplateId(e.target.value)}
+            className="mb-2 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+          >
+            {COVER_LETTER_TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} — {t.description}
+              </option>
+            ))}
+          </select>
+          <textarea
+            id="default-cover"
+            rows={5}
+            value={coverLetterInstructions}
+            onChange={(e) => setCoverLetterInstructions(e.target.value)}
+            placeholder="e.g. One page, formal tone..."
+            className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          />
+          <PhotoUploadField
+            label="Default cover letter photo"
+            storagePath="default-cover"
+            photoUrl={coverPhotoUrl}
+            onPhotoChange={setCoverPhotoUrl}
+            disabled={saving}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className={cn(
+            "rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-accent-hover)]",
+            saving && "opacity-60"
+          )}
+        >
+          {saving ? "Saving…" : "Save profile & defaults"}
+        </button>
+        {message && (
+          <span className="text-sm text-[var(--color-muted)]">{message}</span>
+        )}
+      </div>
+    </section>
+  );
+}
