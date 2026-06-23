@@ -28,8 +28,9 @@ export async function extractTextFromCv(
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
+  const { CanvasFactory } = await import("pdf-parse/worker");
   const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
+  const parser = new PDFParse({ data: buffer, CanvasFactory });
   try {
     const result = await parser.getText();
     return result.text ?? "";
