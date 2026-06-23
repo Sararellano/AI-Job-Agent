@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/contexts/LocaleProvider";
 import type { AiCvAnalysis, OnboardingState, ParsedCvLocal, SkillEvidence } from "@/types/skills";
 import { CvUploadStep } from "@/components/onboarding/CvUploadStep";
 import { ParseReviewStep } from "@/components/onboarding/ParseReviewStep";
@@ -15,6 +16,7 @@ interface OnboardingClientProps {
 type Step = 0 | 1 | 2 | 3;
 
 export function OnboardingClient({ initial }: OnboardingClientProps) {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>(
     initial.onboardingCompleted
@@ -63,17 +65,15 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <header className="mb-8">
+      <header className="mb-8 pr-20">
         <Link
           href="/dashboard"
           className="text-sm text-[var(--color-muted)] hover:text-[var(--color-accent)]"
         >
-          ← Back to dashboard
+          {t("onboarding.backDashboard")}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Build your evidence profile</h1>
-        <p className="text-sm text-[var(--color-muted)]">
-          Upload CV → local parse → quick questions → better matching
-        </p>
+        <h1 className="mt-2 text-2xl font-bold">{t("onboarding.title")}</h1>
+        <p className="text-sm text-[var(--color-muted)]">{t("onboarding.subtitle")}</p>
         <div className="mt-4 flex gap-2">
           {[0, 1, 2, 3].map((s) => (
             <div
@@ -109,16 +109,16 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
         {step === 3 && (
           <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6 text-center">
             <h2 className="mb-2 text-lg font-semibold text-[var(--color-success)]">
-              Profile ready
+              {t("onboarding.readyTitle")}
             </h2>
             <p className="mb-4 text-sm text-[var(--color-muted)]">
-              {skillProfile.length} skills in your evidence profile.
+              {t("onboarding.readySubtitle", { count: skillProfile.length })}
             </p>
             <Link
               href="/dashboard"
               className="inline-block rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium"
             >
-              Go to job offers
+              {t("onboarding.goDashboard")}
             </Link>
           </div>
         )}

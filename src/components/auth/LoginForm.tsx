@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 export function LoginForm() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="email" className="mb-1 block text-sm text-[var(--color-muted)]">
-          Email
+          {t("auth.email")}
         </label>
         <input
           id="email"
@@ -49,7 +51,7 @@ export function LoginForm() {
       </div>
       <div>
         <label htmlFor="password" className="mb-1 block text-sm text-[var(--color-muted)]">
-          Password
+          {t("auth.password")}
         </label>
         <input
           id="password"
@@ -74,12 +76,12 @@ export function LoginForm() {
           loading && "opacity-60"
         )}
       >
-        {loading ? "Signing in…" : "Sign in"}
+        {loading ? t("auth.signingIn") : t("auth.signIn")}
       </button>
       <p className="text-center text-sm text-[var(--color-muted)]">
-        No account?{" "}
+        {t("auth.noAccount")}{" "}
         <Link href="/register" className="text-[var(--color-accent)] hover:underline">
-          Register
+          {t("auth.register")}
         </Link>
       </p>
     </form>

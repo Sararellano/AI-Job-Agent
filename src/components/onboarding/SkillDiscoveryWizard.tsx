@@ -6,6 +6,7 @@ import type {
   QuestionAnswer,
   SkillEvidence,
 } from "@/types/skills";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface SkillDiscoveryWizardProps {
@@ -18,6 +19,7 @@ const BATCH_SIZE = 5;
  * Step 3: Yes / Somewhat / No questions — zero AI tokens.
  */
 export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) {
+  const t = useT();
   const [questions, setQuestions] = useState<DiscoveryQuestion[]>([]);
   const [imposterTips, setImposterTips] = useState<DiscoveryQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, QuestionAnswer>>({});
@@ -78,7 +80,7 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
   if (loading) {
     return (
       <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-8 text-center text-sm text-[var(--color-muted)]">
-        Loading questions…
+        {t("onboarding.loadingQuestions")}
       </div>
     );
   }
@@ -86,13 +88,13 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
   if (questions.length === 0) {
     return (
       <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
-        <p className="mb-4 text-sm">No extra questions needed from your CV.</p>
+        <p className="mb-4 text-sm">{t("onboarding.noQuestions")}</p>
         <button
           type="button"
           onClick={() => saveBatch(true)}
           className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium"
         >
-          Finish onboarding
+          {t("onboarding.finish")}
         </button>
       </div>
     );
@@ -102,12 +104,15 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
 
   return (
     <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
-      <h2 className="mb-1 text-lg font-semibold">3. Skill discovery</h2>
+      <h2 className="mb-1 text-lg font-semibold">{t("onboarding.step3Title")}</h2>
       <p className="mb-2 text-sm text-[var(--color-muted)]">
-        Tap answers — we infer skills (e.g. .yml → YAML). No typing required.
+        {t("onboarding.step3Subtitle")}
       </p>
       <p className="mb-4 text-xs text-[var(--color-muted)]">
-        Batch {batchIndex + 1} of {batches.length}
+        {t("onboarding.batch", {
+          current: batchIndex + 1,
+          total: batches.length,
+        })}
       </p>
 
       {batchIndex === 0 && imposterTips.length > 0 && (
@@ -133,12 +138,12 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
             <div className="flex flex-wrap gap-2">
               {(
                 [
-                  ["yes", "Yes"],
-                  ["somewhat", "A little"],
-                  ["no", "No"],
-                  ["skip", "Skip"],
+                  ["yes", "onboarding.yes"],
+                  ["somewhat", "onboarding.somewhat"],
+                  ["no", "onboarding.no"],
+                  ["skip", "onboarding.skip"],
                 ] as const
-              ).map(([value, label]) => (
+              ).map(([value, key]) => (
                 <button
                   key={value}
                   type="button"
@@ -150,7 +155,7 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
                       : "border border-[var(--color-card-border)] hover:border-[var(--color-accent)]"
                   )}
                 >
-                  {label}
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -160,7 +165,9 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
 
       {skillProfile.length > 0 && (
         <div className="mt-4">
-          <p className="mb-2 text-xs text-[var(--color-muted)]">Profile so far</p>
+          <p className="mb-2 text-xs text-[var(--color-muted)]">
+            {t("onboarding.profileSoFar")}
+          </p>
           <div className="flex flex-wrap gap-1">
             {skillProfile.slice(0, 20).map((s) => (
               <span
@@ -172,7 +179,7 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
             ))}
             {skillProfile.length > 20 && (
               <span className="text-xs text-[var(--color-muted)]">
-                +{skillProfile.length - 20} more
+                {t("onboarding.moreSkills", { count: skillProfile.length - 20 })}
               </span>
             )}
           </div>
@@ -187,10 +194,10 @@ export function SkillDiscoveryWizard({ onComplete }: SkillDiscoveryWizardProps) 
           className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium disabled:opacity-60"
         >
           {saving
-            ? "Saving…"
+            ? t("onboarding.saving")
             : isLastBatch
-              ? "Finish onboarding"
-              : "Next batch"}
+              ? t("onboarding.finish")
+              : t("onboarding.nextBatch")}
         </button>
       </div>
     </div>

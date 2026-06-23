@@ -10,8 +10,11 @@ export interface UserProfile {
   website: string;
   githubUrl: string;
   extraLink: string;
+  salaryRange: string;
   additionalInfo: string;
 }
+
+export type DocumentLanguage = "en" | "es";
 
 export interface CvExperience {
   role: string;
@@ -79,5 +82,6 @@ export const EMPTY_PROFILE: UserProfile = {
   website: "",
   githubUrl: "",
   extraLink: "",
+  salaryRange: "",
   additionalInfo: "",
 };

@@ -85,6 +85,7 @@ function sanitizeProfile(profile: UserProfile): UserProfile {
     website: sanitizeText(profile.website, MAX_PROFILE_FIELD_LENGTH),
     githubUrl: sanitizeText(profile.githubUrl, MAX_PROFILE_FIELD_LENGTH),
     extraLink: sanitizeText(profile.extraLink, MAX_PROFILE_FIELD_LENGTH),
+    salaryRange: sanitizeText(profile.salaryRange, MAX_PROFILE_FIELD_LENGTH),
     additionalInfo: sanitizeText(
       profile.additionalInfo,
       MAX_ADDITIONAL_INFO_LENGTH

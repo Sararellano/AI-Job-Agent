@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import type { AiCvAnalysis, ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface ParseReviewStepProps {
@@ -27,6 +28,7 @@ export function ParseReviewStep({
   onContinue,
   onAiEnhanced,
 }: ParseReviewStepProps) {
+  const t = useT();
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -40,7 +42,7 @@ export function ParseReviewStep({
 
     if (!res.ok) {
       const data = (await res.json()) as { error?: string; hint?: string };
-      setAiError(data.hint ?? data.error ?? "AI analysis unavailable");
+      setAiError(data.hint ?? data.error ?? t("onboarding.aiUnavailable"));
       return;
     }
 
@@ -55,28 +57,28 @@ export function ParseReviewStep({
 
   return (
     <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
-      <h2 className="mb-1 text-lg font-semibold">2. Review extraction</h2>
+      <h2 className="mb-1 text-lg font-semibold">{t("onboarding.step2Title")}</h2>
       <p className="mb-4 text-sm text-[var(--color-muted)]">
-        Detected from your CV without AI. Optional: enhance with Groq or Gemini (1 call).
+        {t("onboarding.step2Subtitle")}
       </p>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Stat label="Track" value={parsed.primaryTrack} />
+        <Stat label={t("onboarding.track")} value={parsed.primaryTrack} />
         <Stat
-          label="Experience"
+          label={t("onboarding.experience")}
           value={
             parsed.yearsExperienceEstimate
-              ? `${parsed.yearsExperienceEstimate} years`
+              ? t("onboarding.years", { count: parsed.yearsExperienceEstimate })
               : "—"
           }
         />
-        <Stat label="Skills found" value={String(skillProfile.length)} />
+        <Stat label={t("onboarding.skillsFound")} value={String(skillProfile.length)} />
       </div>
 
       {skillProfile.length > 0 && (
         <div className="mb-4">
           <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
-            Detected skills
+            {t("onboarding.detectedSkills")}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {skillProfile.map((s) => (
@@ -101,7 +103,7 @@ export function ParseReviewStep({
 
       {parsed.signals.length > 0 && (
         <p className="mb-4 text-xs text-[var(--color-muted)]">
-          Signals for questions: {parsed.signals.join(", ")}
+          {t("onboarding.signals", { list: parsed.signals.join(", ") })}
         </p>
       )}
 
@@ -117,7 +119,7 @@ export function ParseReviewStep({
           onClick={onContinue}
           className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-accent-hover)]"
         >
-          Continue to questions
+          {t("onboarding.continueQuestions")}
         </button>
         <button
           type="button"
@@ -133,7 +135,7 @@ export function ParseReviewStep({
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          Enhance with AI (optional)
+          {t("onboarding.enhanceAi")}
         </button>
       </div>
 

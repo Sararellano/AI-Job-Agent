@@ -1,6 +1,7 @@
 "use client";
 
 import type { UserProfile } from "@/types/documents";
+import { useT } from "@/contexts/LocaleProvider";
 
 interface UserProfileSectionProps {
   profile: UserProfile;
@@ -14,19 +15,21 @@ const inputClass =
  * Shared profile fields used across all generated CVs and cover letters.
  */
 export function UserProfileSection({ profile, onChange }: UserProfileSectionProps) {
+  const t = useT();
+
   function update(field: keyof UserProfile, value: string) {
     onChange({ ...profile, [field]: value });
   }
 
   return (
     <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-background)] p-5">
-      <h3 className="mb-1 text-sm font-semibold">Shared profile</h3>
+      <h3 className="mb-1 text-sm font-semibold">{t("profile.sharedTitle")}</h3>
       <p className="mb-4 text-xs text-[var(--color-muted)]">
-        Name, role and contact details included in every CV and cover letter.
+        {t("profile.sharedSubtitle")}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium">Full name</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.fullName")}</label>
           <input
             className={inputClass}
             value={profile.fullName}
@@ -35,7 +38,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Target role</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.targetRole")}</label>
           <input
             className={inputClass}
             value={profile.targetRole}
@@ -44,7 +47,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Email</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.email")}</label>
           <input
             type="email"
             className={inputClass}
@@ -54,7 +57,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Phone</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.phone")}</label>
           <input
             className={inputClass}
             value={profile.phone}
@@ -63,7 +66,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Mobile</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.mobile")}</label>
           <input
             className={inputClass}
             value={profile.mobile}
@@ -72,7 +75,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Languages</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.languages")}</label>
           <input
             className={inputClass}
             value={profile.languages}
@@ -81,7 +84,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Location</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.location")}</label>
           <input
             className={inputClass}
             value={profile.location}
@@ -90,7 +93,16 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">LinkedIn</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.salaryRange")}</label>
+          <input
+            className={inputClass}
+            value={profile.salaryRange}
+            onChange={(e) => update("salaryRange", e.target.value)}
+            placeholder={t("profile.salaryRangePlaceholder")}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium">{t("profile.linkedin")}</label>
           <input
             className={inputClass}
             value={profile.linkedinUrl}
@@ -99,7 +111,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">GitHub</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.github")}</label>
           <input
             className={inputClass}
             value={profile.githubUrl}
@@ -108,7 +120,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Extra link</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.extraLink")}</label>
           <input
             className={inputClass}
             value={profile.extraLink}
@@ -117,7 +129,7 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium">Website / Portfolio</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.website")}</label>
           <input
             className={inputClass}
             value={profile.website}
@@ -126,13 +138,13 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium">Additional info</label>
+          <label className="mb-1 block text-xs font-medium">{t("profile.additionalInfo")}</label>
           <textarea
             rows={3}
             className={inputClass}
             value={profile.additionalInfo}
             onChange={(e) => update("additionalInfo", e.target.value)}
-            placeholder="Certifications, work authorization, years of experience, education…"
+            placeholder={t("profile.additionalInfoPlaceholder")}
           />
         </div>
       </div>

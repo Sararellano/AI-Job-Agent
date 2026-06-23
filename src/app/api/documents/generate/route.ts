@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     instructions: string;
     photoUrl?: string | null;
     templateId?: string;
+    documentLanguage?: "en" | "es";
   };
 
   const instructions = sanitizeText(body.instructions, MAX_INSTRUCTIONS_LENGTH);
@@ -89,6 +90,9 @@ export async function POST(request: Request) {
     body.templateId ?? userDefault ?? undefined
   );
 
+  const documentLanguage =
+    body.documentLanguage === "es" ? "es" : "en";
+
   let content: string;
   try {
     content = await generateDocument({
@@ -104,6 +108,7 @@ export async function POST(request: Request) {
       photoUrl: body.photoUrl ?? null,
       profile,
       templateId,
+      documentLanguage,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";
@@ -124,12 +129,14 @@ export async function POST(request: Request) {
           cv_photo_url: body.photoUrl ?? null,
           cv_template_id: templateId,
           custom_cv_content: content,
+          document_language: documentLanguage,
         }
       : {
           cover_letter_instructions: instructions,
           cover_letter_photo_url: body.photoUrl ?? null,
           cover_letter_template_id: templateId,
           cover_letter_content: content,
+          document_language: documentLanguage,
         };
 
   let application;

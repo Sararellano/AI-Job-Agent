@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { LogOut, UserCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/contexts/LocaleProvider";
 import type { JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
 import type { OnboardingState } from "@/types/skills";
@@ -39,6 +40,7 @@ export function DashboardClient({
   defaultCoverTemplateId,
   userEmail,
 }: DashboardClientProps) {
+  const t = useT();
   const [jobs, setJobs] = useState(initialJobs);
   const [profile, setProfile] = useState(initialProfile);
   const [cvDefaults, setCvDefaults] = useState(defaultCvInstructions);
@@ -67,11 +69,11 @@ export function DashboardClient({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 pr-20">
         <div>
-          <h1 className="text-2xl font-bold">Job offers</h1>
+          <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
           <p className="text-sm text-[var(--color-muted)]">
-            Signed in as {userEmail}
+            {t("dashboard.signedInAs", { email: userEmail })}
           </p>
         </div>
         <button
@@ -80,7 +82,7 @@ export function DashboardClient({
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm hover:border-[var(--color-danger)] hover:text-[var(--color-danger)]"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("dashboard.signOut")}
         </button>
       </header>
 
@@ -91,11 +93,13 @@ export function DashboardClient({
         >
           <UserCircle className="h-8 w-8 shrink-0 text-amber-400" />
           <div>
-            <p className="font-medium text-amber-200">Complete your evidence profile</p>
+            <p className="font-medium text-amber-200">{t("dashboard.completeProfile")}</p>
             <p className="text-sm text-amber-200/70">
               {onboarding.parsed
-                ? `${onboarding.skillProfile.length} skills · continue questions`
-                : "Upload CV + quick yes/no questions (mostly free, no AI)"}
+                ? t("dashboard.completeProfileParsed", {
+                    count: onboarding.skillProfile.length,
+                  })
+                : t("dashboard.completeProfileEmpty")}
             </p>
           </div>
         </Link>
@@ -104,7 +108,9 @@ export function DashboardClient({
       {onboarding.onboardingCompleted && onboarding.skillProfile.length > 0 && (
         <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-4">
           <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
-            Evidence profile · {onboarding.skillProfile.length} skills
+            {t("dashboard.evidenceProfile", {
+              count: onboarding.skillProfile.length,
+            })}
           </p>
           <div className="flex flex-wrap gap-1">
             {onboarding.skillProfile.slice(0, 15).map((s) => (
@@ -120,7 +126,7 @@ export function DashboardClient({
             href="/onboarding"
             className="mt-2 inline-block text-xs text-[var(--color-accent)] hover:underline"
           >
-            Edit profile
+            {t("dashboard.editProfile")}
           </Link>
         </div>
       )}
@@ -147,10 +153,12 @@ export function DashboardClient({
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">All offers ({jobs.length})</h2>
+        <h2 className="mb-4 text-lg font-semibold">
+          {t("dashboard.allOffers", { count: jobs.length })}
+        </h2>
         {jobs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-[var(--color-card-border)] p-8 text-center text-[var(--color-muted)]">
-            No job offers yet. Run the Supabase migration to seed sample jobs.
+            {t("dashboard.noOffers")}
           </p>
         ) : (
           <div className="space-y-4">

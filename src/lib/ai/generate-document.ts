@@ -2,6 +2,7 @@ import type { Job } from "@/types/database";
 import type {
   CvDocument,
   CoverLetterDocument,
+  DocumentLanguage,
   UserProfile,
 } from "@/types/documents";
 import {
@@ -21,6 +22,7 @@ interface GenerateDocumentInput {
   photoUrl?: string | null;
   profile: UserProfile;
   templateId?: string;
+  documentLanguage?: DocumentLanguage;
 }
 
 /**
@@ -30,70 +32,106 @@ export async function generateDocument(
   input: GenerateDocumentInput
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
+  const lang = input.documentLanguage ?? "en";
 
   if (apiKey) {
-    return generateWithOpenAI(input, apiKey);
+    return generateWithOpenAI({ ...input, documentLanguage: lang }, apiKey);
   }
 
   return input.type === "cv"
-    ? serializeCvContent(buildCvTemplate(input))
-    : serializeCoverLetterContent(buildCoverTemplate(input));
+    ? serializeCvContent(buildCvTemplate({ ...input, documentLanguage: lang }))
+    : serializeCoverLetterContent(
+        buildCoverTemplate({ ...input, documentLanguage: lang })
+      );
 }
 
 function buildCvTemplate(input: GenerateDocumentInput): CvDocument {
   const { job, profile, instructions } = input;
-  const name = profile.fullName || "Your Name";
+  const es = input.documentLanguage === "es";
+  const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
   const role = profile.targetRole || job.title;
+  const expectedSalary =
+    profile.salaryRange || job.salary || (es ? "A convenir" : "Open to discussion");
 
   return {
     version: 1,
     templateId: input.templateId ?? DEFAULT_CV_TEMPLATE,
-    summary: `${name} is a ${role} applying to ${job.company}. ${job.summary ?? ""} ${instructions.slice(0, 200)}`.trim(),
+    summary: es
+      ? `${name} es ${role} y candidata a ${job.company}. ${job.summary ?? ""} ${instructions.slice(0, 200)}`.trim()
+      : `${name} is a ${role} applying to ${job.company}. ${job.summary ?? ""} ${instructions.slice(0, 200)}`.trim(),
     experience: [
       {
         role: role,
-        company: "Previous Company",
+        company: es ? "Empresa anterior" : "Previous Company",
         period: "2021 — Present",
-        highlights: [
-          "Delivered features aligned with job requirements",
-          "Collaborated with cross-functional teams",
-          "Applied skills relevant to this role",
-        ],
+        highlights: es
+          ? [
+              "Entregué funcionalidades alineadas con los requisitos del puesto",
+              "Colaboré con equipos multidisciplinares",
+              "Apliqué habilidades relevantes para este rol",
+            ]
+          : [
+              "Delivered features aligned with job requirements",
+              "Collaborated with cross-functional teams",
+              "Applied skills relevant to this role",
+            ],
       },
     ],
     skills: extractSkills(job.description),
     education: profile.additionalInfo.includes("education")
       ? profile.additionalInfo
-      : "Bachelor's degree or equivalent experience",
-    jobHighlights: [
-      `Targeting ${job.title} at ${job.company}`,
-      `Salary range: ${job.salary ?? "Open to discussion"}`,
-      ...extractSkills(job.description).slice(0, 4).map((s) => `Strong ${s} experience`),
-    ],
+      : es
+        ? "Grado universitario o experiencia equivalente"
+        : "Bachelor's degree or equivalent experience",
+    jobHighlights: es
+      ? [
+          `Interés en ${job.title} en ${job.company}`,
+          `Rango salarial: ${expectedSalary}`,
+          ...extractSkills(job.description)
+            .slice(0, 4)
+            .map((s) => `Experiencia sólida en ${s}`),
+        ]
+      : [
+          `Targeting ${job.title} at ${job.company}`,
+          `Salary range: ${expectedSalary}`,
+          ...extractSkills(job.description)
+            .slice(0, 4)
+            .map((s) => `Strong ${s} experience`),
+        ],
   };
 }
 
 function buildCoverTemplate(input: GenerateDocumentInput): CoverLetterDocument {
   const { job, profile, instructions } = input;
-  const name = profile.fullName || "Your Name";
+  const es = input.documentLanguage === "es";
+  const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
+  const locale = es ? "es-ES" : "en-GB";
 
   return {
     version: 1,
     templateId: input.templateId ?? DEFAULT_COVER_TEMPLATE,
-    date: new Date().toLocaleDateString("en-GB", {
+    date: new Date().toLocaleDateString(locale, {
       day: "numeric",
       month: "long",
       year: "numeric",
     }),
-    greeting: "Dear Hiring Manager,",
-    paragraphs: [
-      `I am writing to express my interest in the ${job.title} position at ${job.company}. As a ${profile.targetRole || "professional"} with experience relevant to your requirements, I am confident I can contribute effectively to your team.`,
-      job.summary
-        ? `From my research, ${job.summary}`
-        : `Your job description resonates with my background and career goals.`,
-      `I would welcome the opportunity to discuss how my skills align with your needs. ${instructions.slice(0, 150)}`,
-    ],
-    closing: `Sincerely,\n${name}`,
+    greeting: es ? "Estimado equipo de selección," : "Dear Hiring Manager,",
+    paragraphs: es
+      ? [
+          `Me dirijo a ustedes para expresar mi interés en el puesto de ${job.title} en ${job.company}. Como ${profile.targetRole || "profesional"} con experiencia relevante, confío en poder aportar valor al equipo.`,
+          job.summary
+            ? `Según mi investigación, ${job.summary}`
+            : "La descripción del puesto encaja con mi trayectoria y objetivos profesionales.",
+          `Me encantaría conversar sobre cómo mis habilidades encajan con sus necesidades. ${instructions.slice(0, 150)}`,
+        ]
+      : [
+          `I am writing to express my interest in the ${job.title} position at ${job.company}. As a ${profile.targetRole || "professional"} with experience relevant to your requirements, I am confident I can contribute effectively to your team.`,
+          job.summary
+            ? `From my research, ${job.summary}`
+            : `Your job description resonates with my background and career goals.`,
+          `I would welcome the opportunity to discuss how my skills align with your needs. ${instructions.slice(0, 150)}`,
+        ],
+    closing: es ? `Atentamente,\n${name}` : `Sincerely,\n${name}`,
   };
 }
 
@@ -121,13 +159,15 @@ async function generateWithOpenAI(
   apiKey: string
 ): Promise<string> {
   const isCv = input.type === "cv";
+  const lang = input.documentLanguage ?? "en";
+  const langLabel = lang === "es" ? "Spanish" : "English";
   const templateId =
     input.templateId ??
     (isCv ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE);
 
   const systemPrompt = isCv
-    ? `You generate CV content as JSON only. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
-    : `You generate cover letter content as JSON only. Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
+    ? `You generate CV content as JSON only. Write ALL text fields in ${langLabel}. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
+    : `You generate cover letter content as JSON only. Write ALL text fields in ${langLabel}. Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
 
   const photoNote = input.photoUrl
     ? `Include photo reference in summary if relevant: ${input.photoUrl}`
@@ -147,7 +187,9 @@ async function generateWithOpenAI(
         { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `${profileBlock}
+          content: `Output language: ${langLabel}
+
+${profileBlock}
 
 Job: ${input.job.title} at ${input.job.company}
 Salary: ${input.job.salary ?? "N/A"}

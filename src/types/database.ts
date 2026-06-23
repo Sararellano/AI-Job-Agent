@@ -44,6 +44,7 @@ export interface UserDocumentSettings {
   website: string | null;
   github_url: string | null;
   extra_link: string | null;
+  salary_range: string | null;
   additional_info: string | null;
   default_cv_instructions: string;
   default_cover_letter_instructions: string;

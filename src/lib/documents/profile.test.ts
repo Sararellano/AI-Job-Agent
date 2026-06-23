@@ -50,6 +50,7 @@ describe("profileToDbFields", () => {
       website: "",
       github_url: "",
       extra_link: "",
+      salary_range: "",
       additional_info: "",
     });
   });

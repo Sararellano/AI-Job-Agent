@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/contexts/LocaleProvider";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
 import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
 import type { UserProfile } from "@/types/documents";
@@ -44,6 +45,7 @@ export function DefaultInstructionsSection({
   initialCoverTemplateId = DEFAULT_COVER_TEMPLATE,
   onSaved,
 }: DefaultInstructionsSectionProps) {
+  const t = useT();
   const [profile, setProfile] = useState(initialProfile);
   const [cvInstructions, setCvInstructions] = useState(initialCvInstructions);
   const [coverLetterInstructions, setCoverLetterInstructions] = useState(
@@ -79,7 +81,7 @@ export function DefaultInstructionsSection({
     setSaving(false);
 
     if (res.ok) {
-      setMessage("Profile and defaults saved.");
+      setMessage(t("defaults.saved"));
       onSaved?.({
         profile,
         cv: cvInstructions,
@@ -91,15 +93,15 @@ export function DefaultInstructionsSection({
       });
     } else {
       const data = (await res.json()) as { error?: string };
-      setMessage(data.error ?? "Failed to save.");
+      setMessage(data.error ?? t("defaults.saveFailed"));
     }
   }
 
   return (
     <section className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
-      <h2 className="mb-1 text-lg font-semibold">Profile &amp; default instructions</h2>
+      <h2 className="mb-1 text-lg font-semibold">{t("defaults.title")}</h2>
       <p className="mb-5 text-sm text-[var(--color-muted)]">
-        Shared info and defaults for every offer. Override per offer when generating.
+        {t("defaults.subtitle")}
       </p>
 
       <UserProfileSection profile={profile} onChange={setProfile} />
@@ -107,7 +109,7 @@ export function DefaultInstructionsSection({
       <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label htmlFor="default-cv" className="mb-2 block text-sm font-medium">
-            CV instructions
+            {t("defaults.cvInstructions")}
           </label>
           <select
             value={cvTemplateId}
@@ -129,7 +131,7 @@ export function DefaultInstructionsSection({
             className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
           />
           <PhotoUploadField
-            label="Default CV photo"
+            label={t("defaults.cvPhoto")}
             storagePath="default-cv"
             photoUrl={cvPhotoUrl}
             onPhotoChange={setCvPhotoUrl}
@@ -138,7 +140,7 @@ export function DefaultInstructionsSection({
         </div>
         <div>
           <label htmlFor="default-cover" className="mb-2 block text-sm font-medium">
-            Cover letter instructions
+            {t("defaults.coverInstructions")}
           </label>
           <select
             value={coverTemplateId}
@@ -160,7 +162,7 @@ export function DefaultInstructionsSection({
             className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
           />
           <PhotoUploadField
-            label="Default cover letter photo"
+            label={t("defaults.coverPhoto")}
             storagePath="default-cover"
             photoUrl={coverPhotoUrl}
             onPhotoChange={setCoverPhotoUrl}
@@ -179,7 +181,7 @@ export function DefaultInstructionsSection({
             saving && "opacity-60"
           )}
         >
-          {saving ? "Saving…" : "Save profile & defaults"}
+          {saving ? t("defaults.saving") : t("defaults.save")}
         </button>
         {message && (
           <span className="text-sm text-[var(--color-muted)]">{message}</span>

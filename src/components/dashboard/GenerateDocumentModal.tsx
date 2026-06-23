@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { Job, JobApplication } from "@/types/database";
+import type { DocumentLanguage } from "@/types/documents";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
 import {
   CV_TEMPLATES,
@@ -10,6 +11,7 @@ import {
   DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
+import { useLocale, useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface GenerateDocumentModalProps {
@@ -18,6 +20,7 @@ interface GenerateDocumentModalProps {
   initialInstructions: string;
   initialPhotoUrl?: string | null;
   initialTemplateId?: string;
+  initialDocumentLanguage?: DocumentLanguage | null;
   onClose: () => void;
   onGenerated: (
     content: string,
@@ -35,23 +38,27 @@ export function GenerateDocumentModal({
   initialInstructions,
   initialPhotoUrl = null,
   initialTemplateId,
+  initialDocumentLanguage,
   onClose,
   onGenerated,
 }: GenerateDocumentModalProps) {
+  const t = useT();
+  const { locale } = useLocale();
   const [instructions, setInstructions] = useState(initialInstructions);
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [templateId, setTemplateId] = useState(
     initialTemplateId ??
       (type === "cv" ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE)
   );
+  const [documentLanguage, setDocumentLanguage] = useState<DocumentLanguage>(
+    initialDocumentLanguage ?? locale
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const title = type === "cv" ? "Create CV" : "Create cover letter";
+  const title = type === "cv" ? t("generate.createCv") : t("generate.createCover");
   const label =
-    type === "cv"
-      ? "Instructions for this CV"
-      : "Instructions for this cover letter";
+    type === "cv" ? t("generate.cvInstructions") : t("generate.coverInstructions");
   const templates = type === "cv" ? CV_TEMPLATES : COVER_LETTER_TEMPLATES;
   const photoStoragePath =
     type === "cv" ? `offers/${job.id}-cv` : `offers/${job.id}-cover`;
@@ -69,6 +76,7 @@ export function GenerateDocumentModal({
         instructions,
         photoUrl,
         templateId,
+        documentLanguage,
       }),
     });
 
@@ -76,7 +84,7 @@ export function GenerateDocumentModal({
 
     if (!res.ok) {
       const data = (await res.json()) as { error?: string };
-      setError(data.error ?? "Generation failed.");
+      setError(data.error ?? t("generate.failed"));
       return;
     }
 
@@ -102,30 +110,42 @@ export function GenerateDocumentModal({
               {title}
             </h2>
             <p className="text-sm text-[var(--color-muted)]">
-              {job.title} at {job.company}
+              {job.title} {t("generate.at")} {job.company}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1 hover:bg-[var(--color-background)]"
-            aria-label="Close"
+            aria-label={t("generate.close")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <label className="mb-2 block text-sm font-medium">Design template</label>
+        <label className="mb-2 block text-sm font-medium">{t("generate.template")}</label>
         <select
           value={templateId}
           onChange={(e) => setTemplateId(e.target.value)}
           className="mb-4 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
         >
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {templates.map((tpl) => (
+            <option key={tpl.id} value={tpl.id}>
+              {tpl.name}
             </option>
           ))}
+        </select>
+
+        <label className="mb-2 block text-sm font-medium">
+          {t("generate.documentLanguage")}
+        </label>
+        <select
+          value={documentLanguage}
+          onChange={(e) => setDocumentLanguage(e.target.value as DocumentLanguage)}
+          className="mb-4 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+        >
+          <option value="en">{t("generate.langEn")}</option>
+          <option value="es">{t("generate.langEs")}</option>
         </select>
 
         <label htmlFor="offer-instructions" className="mb-2 block text-sm font-medium">
@@ -140,7 +160,7 @@ export function GenerateDocumentModal({
         />
 
         <PhotoUploadField
-          label={type === "cv" ? "Photo for this CV" : "Photo for this letter"}
+          label={type === "cv" ? t("generate.cvPhoto") : t("generate.coverPhoto")}
           storagePath={photoStoragePath}
           photoUrl={photoUrl}
           onPhotoChange={setPhotoUrl}
@@ -163,14 +183,18 @@ export function GenerateDocumentModal({
               (loading || !instructions.trim()) && "opacity-60"
             )}
           >
-            {loading ? "Generating…" : `Generate ${type === "cv" ? "CV" : "cover letter"}`}
+            {loading
+              ? t("generate.generating")
+              : type === "cv"
+                ? t("generate.generateCv")
+                : t("generate.generateCover")}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg border border-[var(--color-card-border)] px-4 py-2.5 text-sm"
           >
-            Cancel
+            {t("generate.cancel")}
           </button>
         </div>
       </div>

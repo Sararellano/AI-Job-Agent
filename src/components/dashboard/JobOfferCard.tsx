@@ -11,6 +11,8 @@ import {
 import { parseCvContent, parseCoverLetterContent } from "@/lib/documents/parse-content";
 import { GenerateDocumentModal } from "@/components/dashboard/GenerateDocumentModal";
 import { DocumentPreviewPanel } from "@/components/documents/DocumentPreviewPanel";
+import { useT } from "@/contexts/LocaleProvider";
+import type { DocumentLanguage } from "@/types/documents";
 
 interface JobOfferCardProps {
   job: JobWithApplication;
@@ -24,11 +26,11 @@ interface JobOfferCardProps {
   onApplicationUpdate: (jobId: string, application: JobWithApplication["application"]) => void;
 }
 
-const STATUS_OPTIONS = [
-  { value: "pending", label: "Pending" },
-  { value: "applied", label: "Applied" },
-  { value: "interview", label: "Interview" },
-  { value: "rejected", label: "Rejected" },
+const STATUS_KEYS = [
+  { value: "pending", key: "job.status.pending" as const },
+  { value: "applied", key: "job.status.applied" as const },
+  { value: "interview", key: "job.status.interview" as const },
+  { value: "rejected", key: "job.status.rejected" as const },
 ] as const;
 
 export function JobOfferCard({
@@ -42,6 +44,7 @@ export function JobOfferCard({
   defaultCoverTemplateId,
   onApplicationUpdate,
 }: JobOfferCardProps) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [modalType, setModalType] = useState<"cv" | "cover_letter" | null>(null);
 
@@ -102,9 +105,9 @@ export function JobOfferCard({
               className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-2 py-1.5 text-xs outline-none"
               aria-label="Application status"
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {STATUS_KEYS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.key)}
                 </option>
               ))}
             </select>
@@ -114,7 +117,7 @@ export function JobOfferCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-lg border border-[var(--color-card-border)] p-2 hover:border-[var(--color-accent)]"
-                aria-label="Open job posting"
+                aria-label={t("job.openPosting")}
               >
                 <ExternalLink className="h-4 w-4" />
               </a>
@@ -133,11 +136,11 @@ export function JobOfferCard({
         >
           {expanded ? (
             <>
-              <ChevronUp className="h-4 w-4" /> Hide full description
+              <ChevronUp className="h-4 w-4" /> {t("job.hideDescription")}
             </>
           ) : (
             <>
-              <ChevronDown className="h-4 w-4" /> View full description
+              <ChevronDown className="h-4 w-4" /> {t("job.viewDescription")}
             </>
           )}
         </button>
@@ -155,7 +158,7 @@ export function JobOfferCard({
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm font-medium transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
             <FileText className="h-4 w-4" />
-            {cvData ? "Regenerate CV" : "Create CV"}
+            {cvData ? t("job.regenerateCv") : t("job.createCv")}
           </button>
           <button
             type="button"
@@ -163,7 +166,7 @@ export function JobOfferCard({
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm font-medium transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
             <Mail className="h-4 w-4" />
-            {coverData ? "Regenerate cover letter" : "Create cover letter"}
+            {coverData ? t("job.regenerateCover") : t("job.createCover")}
           </button>
         </div>
 
@@ -172,7 +175,7 @@ export function JobOfferCard({
             {cvData && (
               <DocumentPreviewPanel
                 type="cv"
-                title="Generated CV"
+                title={t("preview.generatedCv")}
                 data={cvData}
                 profile={profile}
                 photoUrl={cvPhotoUrl}
@@ -185,7 +188,7 @@ export function JobOfferCard({
             {coverData && (
               <DocumentPreviewPanel
                 type="cover_letter"
-                title="Generated cover letter"
+                title={t("preview.generatedCover")}
                 data={coverData}
                 profile={profile}
                 photoUrl={coverPhotoUrl}
@@ -209,6 +212,9 @@ export function JobOfferCard({
           initialPhotoUrl={modalType === "cv" ? cvPhotoUrl : coverPhotoUrl}
           initialTemplateId={
             modalType === "cv" ? cvTemplateId : coverTemplateId
+          }
+          initialDocumentLanguage={
+            (job.application?.document_language as DocumentLanguage | null) ?? null
           }
           onClose={() => setModalType(null)}
           onGenerated={(_content, _instructions, application) =>

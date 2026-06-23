@@ -19,6 +19,7 @@ export function settingsToProfile(
     website: settings.website ?? "",
     githubUrl: settings.github_url ?? "",
     extraLink: settings.extra_link ?? "",
+    salaryRange: settings.salary_range ?? "",
     additionalInfo: settings.additional_info ?? "",
   };
 }
@@ -36,6 +37,7 @@ export function profileToDbFields(profile: UserProfile) {
     website: profile.website,
     github_url: profile.githubUrl,
     extra_link: profile.extraLink,
+    salary_range: profile.salaryRange,
     additional_info: profile.additionalInfo,
   };
 }
@@ -55,6 +57,7 @@ export function formatProfileForPrompt(profile: UserProfile): string {
   if (profile.website) lines.push(`Website: ${profile.website}`);
   if (profile.githubUrl) lines.push(`GitHub: ${profile.githubUrl}`);
   if (profile.extraLink) lines.push(`Extra link: ${profile.extraLink}`);
+  if (profile.salaryRange) lines.push(`Expected salary: ${profile.salaryRange}`);
   if (profile.additionalInfo) lines.push(`Additional: ${profile.additionalInfo}`);
 
   return lines.join("\n");

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Trash2, Loader2 } from "lucide-react";
 import { uploadPhoto, deletePhotoByUrl } from "@/lib/supabase/upload-photo";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface PhotoUploadFieldProps {
@@ -18,13 +19,16 @@ interface PhotoUploadFieldProps {
  * File picker to upload a photo from the user's computer to Supabase Storage.
  */
 export function PhotoUploadField({
-  label = "Photo",
-  hint = "JPG, PNG, WebP or GIF — max 5MB",
+  label,
+  hint,
   storagePath,
   photoUrl,
   onPhotoChange,
   disabled = false,
 }: PhotoUploadFieldProps) {
+  const t = useT();
+  const resolvedLabel = label ?? "Photo";
+  const resolvedHint = hint ?? t("photo.hint");
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +74,7 @@ export function PhotoUploadField({
   return (
     <div className="mt-3 rounded-lg border border-dashed border-[var(--color-card-border)] bg-[var(--color-background)] p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-sm font-medium">{resolvedLabel}</span>
         {photoUrl && (
           <button
             type="button"
@@ -79,7 +83,7 @@ export function PhotoUploadField({
             className="inline-flex items-center gap-1 text-xs text-[var(--color-danger)] hover:underline disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Remove
+            {t("photo.remove")}
           </button>
         )}
       </div>
@@ -123,9 +127,9 @@ export function PhotoUploadField({
             )}
           >
             <ImagePlus className="h-4 w-4" />
-            {photoUrl ? "Change photo" : "Upload from computer"}
+            {photoUrl ? t("photo.change") : t("photo.upload")}
           </label>
-          <p className="mt-1.5 text-xs text-[var(--color-muted)]">{hint}</p>
+          <p className="mt-1.5 text-xs text-[var(--color-muted)]">{resolvedHint}</p>
           {error && (
             <p className="mt-1 text-xs text-[var(--color-danger)]" role="alert">
               {error}

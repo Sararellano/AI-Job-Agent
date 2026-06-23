@@ -7,6 +7,7 @@ import { CV_TEMPLATES, COVER_LETTER_TEMPLATES } from "@/types/documents";
 import { CvTemplateRenderer } from "@/components/documents/CvTemplates";
 import { CoverLetterTemplateRenderer } from "@/components/documents/CoverLetterTemplates";
 import { downloadDocument } from "@/lib/export/download-document";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface DocumentPreviewPanelProps {
@@ -35,6 +36,7 @@ export function DocumentPreviewPanel({
   jobId,
   onApplicationUpdate,
 }: DocumentPreviewPanelProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [templateId, setTemplateId] = useState(data.templateId);
   const [downloading, setDownloading] = useState<DocumentFormat | null>(null);
@@ -93,7 +95,7 @@ export function DocumentPreviewPanel({
           className="flex items-center gap-1 text-sm font-medium text-[var(--color-accent)]"
         >
           {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          {open ? "Hide" : "View"} {title}
+          {open ? t("preview.hide") : t("preview.view")} {title}
         </button>
 
         {open && (
@@ -102,7 +104,7 @@ export function DocumentPreviewPanel({
               value={templateId}
               onChange={(e) => handleTemplateChange(e.target.value)}
               className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-2 py-1.5 text-xs outline-none"
-              aria-label="Template"
+              aria-label={t("preview.template")}
             >
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -122,7 +124,9 @@ export function DocumentPreviewPanel({
                 )}
               >
                 <Download className="h-3.5 w-3.5" />
-                {downloading ? `Downloading ${downloading.toUpperCase()}…` : "Download"}
+                {downloading
+                  ? t("preview.downloading", { format: downloading.toUpperCase() })
+                  : t("preview.download")}
               </button>
               {showFormats && (
                 <div className="absolute right-0 z-10 mt-1 min-w-[120px] rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] py-1 shadow-lg">

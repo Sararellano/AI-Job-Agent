@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import type { ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface CvUploadStepProps {
@@ -18,6 +19,7 @@ interface CvUploadStepProps {
  * Step 1: Upload CV (PDF/DOCX) and run local parser.
  */
 export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
 
     if (!res.ok) {
       const data = (await res.json()) as { error?: string };
-      setError(data.error ?? "Upload failed");
+      setError(data.error ?? t("onboarding.uploadFailed"));
       return;
     }
 
@@ -55,9 +57,9 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
 
   return (
     <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
-      <h2 className="mb-1 text-lg font-semibold">1. Upload your current CV</h2>
+      <h2 className="mb-1 text-lg font-semibold">{t("onboarding.step1Title")}</h2>
       <p className="mb-4 text-sm text-[var(--color-muted)]">
-        PDF or DOCX. We extract text locally — no AI required for this step.
+        {t("onboarding.step1Subtitle")}
       </p>
 
       <input
@@ -89,10 +91,10 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
         )}
         <span className="text-sm font-medium">
           {uploading
-            ? "Parsing locally…"
+            ? t("onboarding.parsing")
             : fileName
-              ? `Uploaded: ${fileName}`
-              : "Click to upload PDF or DOCX"}
+              ? t("onboarding.uploaded", { name: fileName })
+              : t("onboarding.uploadClick")}
         </span>
       </button>
 

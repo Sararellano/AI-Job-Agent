@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 export function RegisterForm() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="email" className="mb-1 block text-sm text-[var(--color-muted)]">
-          Email
+          {t("auth.email")}
         </label>
         <input
           id="email"
@@ -48,7 +50,7 @@ export function RegisterForm() {
       </div>
       <div>
         <label htmlFor="password" className="mb-1 block text-sm text-[var(--color-muted)]">
-          Password
+          {t("auth.password")}
         </label>
         <input
           id="password"
@@ -73,12 +75,12 @@ export function RegisterForm() {
           loading && "opacity-60"
         )}
       >
-        {loading ? "Creating account…" : "Create account"}
+        {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
       </button>
       <p className="text-center text-sm text-[var(--color-muted)]">
-        Already have an account?{" "}
+        {t("auth.hasAccount")}{" "}
         <Link href="/login" className="text-[var(--color-accent)] hover:underline">
-          Sign in
+          {t("auth.signIn")}
         </Link>
       </p>
     </form>
