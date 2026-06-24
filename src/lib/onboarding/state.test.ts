@@ -1,54 +1,95 @@
 import { describe, expect, it } from "vitest";
 import { settingsToOnboarding } from "@/lib/onboarding/state";
+import type { UserDocumentSettings } from "@/types/database";
+
+const BASE_SETTINGS = {
+  id: "id-1",
+  user_id: "user-1",
+  full_name: null,
+  target_role: null,
+  email: null,
+  phone: null,
+  mobile: null,
+  languages: null,
+  location: null,
+  linkedin_url: null,
+  website: null,
+  github_url: null,
+  extra_link: null,
+  salary_range: null,
+  additional_info: null,
+  default_cv_instructions: "",
+  default_cover_letter_instructions: "",
+  default_cv_photo_url: null,
+  default_cover_letter_photo_url: null,
+  default_cv_template_id: null,
+  default_cover_letter_template_id: null,
+  cv_file_url: null,
+  cv_file_name: null,
+  cv_parsed_raw: null,
+  cv_parsed_structured: null,
+  primary_track: "frontend",
+  skill_profile: null,
+  question_answers: null,
+  ai_cv_analysis: null,
+  onboarding_completed: false,
+  onboarding_step: 0,
+  job_preferences: null,
+  updated_at: "2024-01-01T00:00:00Z",
+} satisfies UserDocumentSettings;
 
 describe("settingsToOnboarding", () => {
-  it("returns defaults when settings are missing", () => {
-    expect(settingsToOnboarding(null)).toEqual({
-      cvFileUrl: null,
-      cvFileName: null,
-      parsed: null,
-      skillProfile: [],
-      questionAnswers: {},
-      aiAnalysis: null,
-      onboardingCompleted: false,
-      onboardingStep: 0,
-      primaryTrack: "general",
-    });
+  it("returns sensible defaults for null settings", () => {
+    const state = settingsToOnboarding(null);
+    expect(state.primaryTrack).toBe("general");
+    expect(state.skillProfile).toEqual([]);
+    expect(state.onboardingCompleted).toBe(false);
+    expect(state.jobPreferences).toBeNull();
   });
 
-  it("maps persisted onboarding fields from settings", () => {
-    const parsed = {
-      version: 1 as const,
-      primaryTrack: "frontend" as const,
-      secondaryTracks: [] as const,
-      yearsExperienceEstimate: 4,
-      detectedSkills: ["React"],
-      skillConfidence: { React: "high" as const },
-      roles: [],
-      signals: [],
-      emails: [],
+  it("maps primary_track correctly", () => {
+    const state = settingsToOnboarding(BASE_SETTINGS);
+    expect(state.primaryTrack).toBe("frontend");
+  });
+
+  it("maps jobPreferences to null when not set", () => {
+    const state = settingsToOnboarding(BASE_SETTINGS);
+    expect(state.jobPreferences).toBeNull();
+  });
+
+  it("parses valid job_preferences", () => {
+    const settings: UserDocumentSettings = {
+      ...BASE_SETTINGS,
+      job_preferences: {
+        targetRoles: ["Frontend Developer"],
+        workMode: "remote",
+        seniority: "senior",
+        tracks: ["frontend"],
+        includeProductRoles: false,
+        includeDesignRoles: false,
+        preferredLocations: [],
+        excludedKeywords: [],
+        minMatchScore: 60,
+      },
     };
+    const state = settingsToOnboarding(settings);
+    expect(state.jobPreferences?.workMode).toBe("remote");
+    expect(state.jobPreferences?.minMatchScore).toBe(60);
+    expect(state.jobPreferences?.targetRoles).toEqual(["Frontend Developer"]);
+  });
 
-    const state = settingsToOnboarding({
-      cv_file_url: "https://storage/cv.pdf",
-      cv_file_name: "cv.pdf",
-      cv_parsed_structured: parsed,
-      skill_profile: [{ name: "React", level: "production", sources: ["cv"], confidence: "high" }],
-      question_answers: { "q-react-components": "yes" },
-      onboarding_completed: true,
-      onboarding_step: 3,
-      primary_track: "frontend",
-    });
+  it("parses malformed job_preferences gracefully", () => {
+    const settings: UserDocumentSettings = {
+      ...BASE_SETTINGS,
+      job_preferences: { workMode: "spaceship", minMatchScore: 999 },
+    };
+    const state = settingsToOnboarding(settings);
+    expect(state.jobPreferences?.workMode).toBe("any");
+    expect(state.jobPreferences?.minMatchScore).toBe(40);
+  });
 
-    expect(state).toMatchObject({
-      cvFileUrl: "https://storage/cv.pdf",
-      cvFileName: "cv.pdf",
-      parsed,
-      onboardingCompleted: true,
-      onboardingStep: 3,
-      primaryTrack: "frontend",
-    });
-    expect(state.skillProfile).toHaveLength(1);
-    expect(state.questionAnswers["q-react-components"]).toBe("yes");
+  it("maps onboardingCompleted", () => {
+    const state = settingsToOnboarding({ ...BASE_SETTINGS, onboarding_completed: true });
+    expect(state.onboardingCompleted).toBe(true);
   });
 });

@@ -69,4 +69,6 @@ export interface OnboardingState {
   onboardingCompleted: boolean;
   onboardingStep: number;
   primaryTrack: CareerTrack;
+  /** Job search preferences captured in the final onboarding step. */
+  jobPreferences: import("@/types/job-preferences").JobPreferences | null;
 }
