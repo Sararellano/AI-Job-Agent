@@ -8,12 +8,14 @@ import { useT } from "@/contexts/LocaleProvider";
 
 interface SyncJobsButtonProps {
   className?: string;
+  /** Called after a successful sync so parent can refresh matched jobs. */
+  onSynced?: () => void;
 }
 
 /**
  * Triggers a manual sync from configured job connectors.
  */
-export function SyncJobsButton({ className }: SyncJobsButtonProps) {
+export function SyncJobsButton({ className, onSynced }: SyncJobsButtonProps) {
   const t = useT();
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -49,6 +51,7 @@ export function SyncJobsButton({ className }: SyncJobsButtonProps) {
       `${t("sync.success", { inserted: String(inserted), fetched: String(fetched) })}${keywordHint}`
     );
     router.refresh();
+    onSynced?.();
   }
 
   return (
