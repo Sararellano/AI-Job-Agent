@@ -8,12 +8,14 @@ import { useT } from "@/contexts/LocaleProvider";
 
 interface SyncJobsButtonProps {
   className?: string;
+  /** Called after a successful sync so parent can refresh matched jobs. */
+  onSynced?: () => void;
 }
 
 /**
  * Triggers a manual sync from configured job connectors.
  */
-export function SyncJobsButton({ className }: SyncJobsButtonProps) {
+export function SyncJobsButton({ className, onSynced }: SyncJobsButtonProps) {
   const t = useT();
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -29,6 +31,7 @@ export function SyncJobsButton({ className }: SyncJobsButtonProps) {
     const data = (await res.json()) as {
       error?: string;
       totals?: { inserted: number; fetched: number; skipped: number; errors: number };
+      keywordsUsed?: string[];
     };
 
     setSyncing(false);
@@ -40,15 +43,32 @@ export function SyncJobsButton({ className }: SyncJobsButtonProps) {
     }
 
     const { inserted = 0, fetched = 0 } = data.totals ?? {};
-    const keywordsUsed = (data as { keywordsUsed?: string[] }).keywordsUsed ?? [];
+    const keywordsUsed = data.keywordsUsed ?? [];
     const keywordHint =
       keywordsUsed.length > 0
         ? ` ${t("sync.keywordsUsed", { keywords: keywordsUsed.slice(0, 5).join(", ") })}`
         : "";
+
+    // After sync, check how many of the new jobs match the user's profile
+    let matchedHint = "";
+    try {
+      const matchRes = await fetch("/api/jobs/matched");
+      if (matchRes.ok) {
+        const matchData = (await matchRes.json()) as { matched: number; total: number };
+        matchedHint = ` ${t("dashboard.syncMatched", {
+          matched: String(matchData.matched),
+          total: String(matchData.total),
+        })}`;
+      }
+    } catch {
+      // non-critical; ignore
+    }
+
     setMessage(
-      `${t("sync.success", { inserted: String(inserted), fetched: String(fetched) })}${keywordHint}`
+      `${t("sync.success", { inserted: String(inserted), fetched: String(fetched) })}${keywordHint}${matchedHint}`
     );
     router.refresh();
+    onSynced?.();
   }
 
   return (

@@ -11,6 +11,7 @@ import {
 import { parseCvContent, parseCoverLetterContent } from "@/lib/documents/parse-content";
 import { GenerateDocumentModal } from "@/components/dashboard/GenerateDocumentModal";
 import { DocumentPreviewPanel } from "@/components/documents/DocumentPreviewPanel";
+import { MatchScoreBadge } from "@/components/dashboard/MatchScoreBadge";
 import { useT } from "@/contexts/LocaleProvider";
 import type { DocumentLanguage } from "@/types/documents";
 
@@ -24,6 +25,10 @@ interface JobOfferCardProps {
   defaultCvTemplateId: string;
   defaultCoverTemplateId: string;
   onApplicationUpdate: (jobId: string, application: JobWithApplication["application"]) => void;
+  /** Relevance score (0–100) for this job, shown as a badge. */
+  matchScore?: number;
+  matchedKeywords?: string[];
+  matchReasons?: string[];
 }
 
 const STATUS_KEYS = [
@@ -43,6 +48,9 @@ export function JobOfferCard({
   defaultCvTemplateId,
   defaultCoverTemplateId,
   onApplicationUpdate,
+  matchScore,
+  matchedKeywords = [],
+  matchReasons = [],
 }: JobOfferCardProps) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
@@ -91,9 +99,18 @@ export function JobOfferCard({
       <article className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-[var(--color-accent)]">
-              {job.company}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-[var(--color-accent)]">
+                {job.company}
+              </p>
+              {matchScore !== undefined && matchScore > 0 && (
+                <MatchScoreBadge
+                  score={matchScore}
+                  matchedKeywords={matchedKeywords}
+                  reasons={matchReasons}
+                />
+              )}
+            </div>
             <h3 className="text-lg font-semibold">{job.title}</h3>
             {job.salary && (
               <p className="mt-1 text-sm text-[var(--color-success)]">{job.salary}</p>

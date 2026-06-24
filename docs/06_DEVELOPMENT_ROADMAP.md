@@ -19,12 +19,18 @@
 - Guardado de ofertas entrantes
 - Job deduplication básica
 
-## Sprint 4 — Matching
+## Sprint 4 — Matching ✅ (parcialmente implementado)
 
-- Matching Agent
-- Score 0–100
-- Campo "por qué me interesa"
-- Ranking de ofertas en dashboard
+- ~~Matching Agent~~ → scoring basado en reglas (sin IA, 0 tokens)
+- Score 0–100 por oferta visible en dashboard
+- Pestaña "Para ti" filtrada por score + pestaña "Todas"
+- Preferencias de búsqueda: roles, modalidad, seniority, tracks, exclusiones
+- Motor de keywords strict/broad (manual sync vs cron)
+- Onboarding paso 4: JobPreferencesStep
+
+Pendiente de Sprint 4:
+- Campo "por qué me interesa" (explicación IA)
+- Company Research Agent
 
 ## Sprint 5 — Empresa
 

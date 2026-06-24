@@ -7,10 +7,12 @@ import type {
   SkillEvidence,
   CareerTrack,
 } from "@/types/skills";
+import { parseJobPreferences } from "@/types/job-preferences";
 
 export function settingsToOnboarding(
   settings: Partial<UserDocumentSettings> | null | undefined
 ): OnboardingState {
+  const rawPrefs = settings?.job_preferences ?? null;
   return {
     cvFileUrl: settings?.cv_file_url ?? null,
     cvFileName: settings?.cv_file_name ?? null,
@@ -23,5 +25,6 @@ export function settingsToOnboarding(
     onboardingCompleted: settings?.onboarding_completed ?? false,
     onboardingStep: settings?.onboarding_step ?? 0,
     primaryTrack: (settings?.primary_track as CareerTrack) ?? "general",
+    jobPreferences: rawPrefs ? parseJobPreferences(rawPrefs) : null,
   };
 }

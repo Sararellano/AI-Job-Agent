@@ -89,6 +89,7 @@ export interface UserDocumentSettings {
   ai_cv_analysis: Record<string, unknown> | null;
   onboarding_completed: boolean | null;
   onboarding_step: number | null;
+  job_preferences: Record<string, unknown> | null;
   updated_at: string;
 }
 

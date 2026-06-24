@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { LogOut, UserCircle } from "lucide-react";
+import { LogOut, UserCircle, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/contexts/LocaleProvider";
 import type { JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
 import type { OnboardingState } from "@/types/skills";
+import type { JobPreferences } from "@/types/job-preferences";
+import { DEFAULT_JOB_PREFERENCES } from "@/types/job-preferences";
 import {
   DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
@@ -16,6 +18,10 @@ import { DefaultInstructionsSection } from "@/components/dashboard/DefaultInstru
 import { AddJobForm } from "@/components/dashboard/AddJobForm";
 import { SyncJobsButton } from "@/components/dashboard/SyncJobsButton";
 import { JobOfferCard } from "@/components/dashboard/JobOfferCard";
+import { JobPreferencesEditor } from "@/components/dashboard/JobPreferencesEditor";
+import type { JobWithRelevance, MatchedJobsResponse } from "@/app/api/jobs/matched/route";
+
+type TabView = "matched" | "all";
 
 interface DashboardClientProps {
   jobs: JobWithApplication[];
@@ -50,12 +56,43 @@ export function DashboardClient({
   const [cvPhotoDefault, setCvPhotoDefault] = useState(defaultCvPhotoUrl);
   const [coverPhotoDefault, setCoverPhotoDefault] = useState(defaultCoverLetterPhotoUrl);
   const [cvTemplateDefault, setCvTemplateDefault] = useState(defaultCvTemplateId);
-  const [coverTemplateDefault, setCoverTemplateDefault] = useState(
-    defaultCoverTemplateId
+  const [coverTemplateDefault, setCoverTemplateDefault] = useState(defaultCoverTemplateId);
+
+  // Preferences & matching state
+  const [preferences, setPreferences] = useState<JobPreferences>(
+    onboarding.jobPreferences ?? DEFAULT_JOB_PREFERENCES
+  );
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabView>("matched");
+  const [matchedJobs, setMatchedJobs] = useState<JobWithRelevance[]>([]);
+  const [matchLoading, setMatchLoading] = useState(true);
+
+  const fetchMatched = useCallback(async (showAll: boolean) => {
+    setMatchLoading(true);
+    try {
+      const url = showAll ? "/api/jobs/matched?all=true" : "/api/jobs/matched";
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = (await res.json()) as MatchedJobsResponse;
+      setMatchedJobs(data.jobs);
+    } finally {
+      setMatchLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMatched(activeTab === "all");
+  }, [activeTab, fetchMatched]);
+
+  // Rebuild scorecard map for quick lookup
+  const scoreMap = new Map(
+    matchedJobs.map((j) => [j.id, { score: j.score, keywords: j.matchedKeywords, reasons: j.reasons }])
   );
 
   function handleJobAdded(job: JobWithApplication) {
     setJobs((prev) => [{ ...job, application: null }, ...prev]);
+    // Refresh matched list after adding a new job
+    fetchMatched(activeTab === "all");
   }
 
   function handleApplicationUpdate(
@@ -67,11 +104,28 @@ export function DashboardClient({
     );
   }
 
+  function handlePreferencesSaved(prefs: JobPreferences) {
+    setPreferences(prefs);
+    setPrefsOpen(false);
+    // Refresh matched list with new preferences
+    fetchMatched(activeTab === "all");
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+
+  // Compute display list: for "matched" tab use scored order; for "all" use jobs list
+  const displayJobs: JobWithApplication[] =
+    activeTab === "matched"
+      ? matchedJobs
+          .map((mj) => jobs.find((j) => j.id === mj.id) ?? { ...mj, application: null })
+          .filter(Boolean) as JobWithApplication[]
+      : jobs;
+
+  const hasPreferences = Boolean(onboarding.jobPreferences);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -162,36 +216,107 @@ export function DashboardClient({
         onJobAdded={(job) => handleJobAdded({ ...job, application: null })}
       />
 
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">
-            {t("dashboard.allOffers", { count: jobs.length })}
-          </h2>
-          <SyncJobsButton />
+      {/* Job preferences panel */}
+      {hasPreferences && (
+        <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)]">
+          <button
+            type="button"
+            onClick={() => setPrefsOpen((v) => !v)}
+            className="flex w-full items-center justify-between px-5 py-3 text-sm font-medium"
+          >
+            <span className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-[var(--color-accent)]" />
+              {t("prefs.editTitle")}
+            </span>
+            {prefsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          {prefsOpen && (
+            <div className="border-t border-[var(--color-card-border)] px-5 pb-5 pt-4">
+              <p className="mb-4 text-xs text-[var(--color-muted)]">{t("prefs.editSubtitle")}</p>
+              <JobPreferencesEditor
+                initial={preferences}
+                onSaved={handlePreferencesSaved}
+              />
+            </div>
+          )}
         </div>
-        {jobs.length === 0 ? (
+      )}
+
+      <section>
+        {/* Tab bar + sync button */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] p-1">
+            <TabButton
+              active={activeTab === "matched"}
+              onClick={() => setActiveTab("matched")}
+              label={t("dashboard.forYou", { count: String(matchedJobs.length) })}
+            />
+            <TabButton
+              active={activeTab === "all"}
+              onClick={() => setActiveTab("all")}
+              label={t("dashboard.allOffers2", { count: String(jobs.length) })}
+            />
+          </div>
+          <SyncJobsButton onSynced={() => fetchMatched(activeTab === "all")} />
+        </div>
+
+        {matchLoading ? (
+          <p className="py-8 text-center text-sm text-[var(--color-muted)]">…</p>
+        ) : displayJobs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-[var(--color-card-border)] p-8 text-center text-[var(--color-muted)]">
-            {t("dashboard.noOffers")}
+            {activeTab === "matched"
+              ? t("dashboard.noMatches")
+              : t("dashboard.noOffers")}
           </p>
         ) : (
           <div className="space-y-4">
-            {jobs.map((job) => (
-              <JobOfferCard
-                key={job.id}
-                job={job}
-                profile={profile}
-                defaultCvInstructions={cvDefaults}
-                defaultCoverLetterInstructions={coverDefaults}
-                defaultCvPhotoUrl={cvPhotoDefault}
-                defaultCoverLetterPhotoUrl={coverPhotoDefault}
-                defaultCvTemplateId={cvTemplateDefault}
-                defaultCoverTemplateId={coverTemplateDefault}
-                onApplicationUpdate={handleApplicationUpdate}
-              />
-            ))}
+            {displayJobs.map((job) => {
+              const match = scoreMap.get(job.id);
+              return (
+                <JobOfferCard
+                  key={job.id}
+                  job={job}
+                  profile={profile}
+                  defaultCvInstructions={cvDefaults}
+                  defaultCoverLetterInstructions={coverDefaults}
+                  defaultCvPhotoUrl={cvPhotoDefault}
+                  defaultCoverLetterPhotoUrl={coverPhotoDefault}
+                  defaultCvTemplateId={cvTemplateDefault}
+                  defaultCoverTemplateId={coverTemplateDefault}
+                  onApplicationUpdate={handleApplicationUpdate}
+                  matchScore={match?.score}
+                  matchedKeywords={match?.keywords}
+                  matchReasons={match?.reasons}
+                />
+              );
+            })}
           </div>
         )}
       </section>
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+        active
+          ? "bg-[var(--color-accent)] text-white"
+          : "hover:bg-[var(--color-background)] text-[var(--color-muted)]"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

@@ -60,13 +60,14 @@ export async function POST() {
 
   const { data: settings } = await supabase
     .from("user_document_settings")
-    .select("target_role, primary_track, skill_profile")
+    .select("target_role, primary_track, skill_profile, job_preferences")
     .eq("user_id", user.id)
     .maybeSingle();
 
   try {
     const summary = await runJobSync(supabase, {
       profile: settingsToJobSearchProfile(settings),
+      keywordMode: "strict",
     });
     return NextResponse.json(summary);
   } catch (error) {

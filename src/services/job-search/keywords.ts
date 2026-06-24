@@ -1,12 +1,22 @@
 import type { CreateJobInput } from "@/types/database";
 import type { CareerTrack, SkillEvidence } from "@/types/skills";
+import type { JobPreferences } from "@/types/job-preferences";
 
 export interface JobSearchProfile {
   targetRole?: string | null;
   primaryTrack?: CareerTrack | null;
   skillProfile?: SkillEvidence[];
   additionalKeywords?: string[];
+  /** When set, strict mode uses preferences instead of broad defaults. */
+  jobPreferences?: JobPreferences | null;
 }
+
+/**
+ * Keyword build mode.
+ * - "broad": includes DEFAULT_TECH_KEYWORDS; used by cron/global sync.
+ * - "strict": only profile-derived keywords; used by manual sync + matching.
+ */
+export type KeywordMode = "broad" | "strict";
 
 /** Role-title keywords per engineering track. */
 export const TRACK_ROLE_KEYWORDS: Record<CareerTrack, string[]> = {
@@ -195,39 +205,78 @@ function addPhraseTokens(keywords: Set<string>, phrase: string) {
 }
 
 /**
- * Builds a keyword set from profile, track, skills and optional env overrides.
+ * Builds a keyword set from the profile.
+ *
+ * mode = "strict" → only profile-derived terms (used by manual sync + relevance scoring).
+ * mode = "broad"  → adds DEFAULT_TECH_KEYWORDS fallback (used by cron global sync).
  */
-export function buildSearchKeywords(profile: JobSearchProfile): string[] {
+export function buildSearchKeywords(
+  profile: JobSearchProfile,
+  mode: KeywordMode = "broad"
+): string[] {
   const keywords = new Set<string>();
-  const targetRole = profile.targetRole?.trim() ?? "";
-  const track = profile.primaryTrack;
+  const prefs = profile.jobPreferences;
 
+  // Extra env/caller-supplied keywords always included
   profile.additionalKeywords?.forEach((keyword) => addPhraseTokens(keywords, keyword));
 
-  if (targetRole) {
-    addPhraseTokens(keywords, targetRole);
+  // Target roles: prefer preferences list, fall back to single targetRole field
+  const roleStrings: string[] = prefs?.targetRoles?.length
+    ? prefs.targetRoles
+    : profile.targetRole?.trim()
+      ? [profile.targetRole.trim()]
+      : [];
+
+  for (const role of roleStrings) {
+    addPhraseTokens(keywords, role);
   }
 
-  if (track) {
+  // Tracks: prefer preferences list, fall back to single primary_track
+  const tracks: CareerTrack[] = prefs?.tracks?.length
+    ? prefs.tracks
+    : profile.primaryTrack
+      ? [profile.primaryTrack]
+      : [];
+
+  for (const track of tracks) {
     TRACK_ROLE_KEYWORDS[track].forEach((keyword) => keywords.add(keyword));
     if (track === "frontend" || track === "backend") {
       TRACK_ROLE_KEYWORDS.fullstack.forEach((keyword) => keywords.add(keyword));
     }
   }
 
+  // Confirmed skills from onboarding
   extractSkillKeywords(profile.skillProfile ?? []).forEach((keyword) =>
     addKeyword(keywords, keyword)
   );
 
-  if (PRODUCT_TRACK_HINT.test(targetRole)) {
+  // Product / design role expansions
+  const allRoleText = roleStrings.join(" ");
+  const includeProduct = prefs?.includeProductRoles ??
+    PRODUCT_TRACK_HINT.test(allRoleText) ??
+    PRODUCT_TRACK_HINT.test(profile.targetRole ?? "");
+  const includeDesign = prefs?.includeDesignRoles ??
+    DESIGN_TRACK_HINT.test(allRoleText) ??
+    DESIGN_TRACK_HINT.test(profile.targetRole ?? "");
+
+  if (includeProduct) {
     PRODUCT_KEYWORDS.forEach((keyword) => keywords.add(keyword));
   }
-
-  if (DESIGN_TRACK_HINT.test(targetRole)) {
+  if (includeDesign) {
     DESIGN_KEYWORDS.forEach((keyword) => keywords.add(keyword));
   }
 
-  DEFAULT_TECH_KEYWORDS.forEach((keyword) => keywords.add(keyword));
+  // Broad mode only: add catch-all defaults so cron keeps fetching wide variety
+  if (mode === "broad") {
+    DEFAULT_TECH_KEYWORDS.forEach((keyword) => keywords.add(keyword));
+  }
+
+  // Remove excluded keywords (strict mode only, no point in broad)
+  if (mode === "strict" && prefs?.excludedKeywords?.length) {
+    for (const excluded of prefs.excludedKeywords) {
+      keywords.delete(excluded.toLowerCase().trim());
+    }
+  }
 
   return [...keywords].slice(0, MAX_KEYWORDS);
 }

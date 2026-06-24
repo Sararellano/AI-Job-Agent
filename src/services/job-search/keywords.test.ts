@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SkillEvidence } from "@/types/skills";
+import type { JobPreferences } from "@/types/job-preferences";
 import {
   buildInfoJobsQueries,
   buildSearchKeywords,
@@ -30,7 +31,7 @@ describe("extractSkillKeywords", () => {
   });
 });
 
-describe("buildSearchKeywords", () => {
+describe("buildSearchKeywords — broad mode (default)", () => {
   it("merges track, role and onboarding skills", () => {
     const keywords = buildSearchKeywords({
       targetRole: "Senior Backend Engineer",
@@ -62,12 +63,91 @@ describe("buildSearchKeywords", () => {
     );
   });
 
-  it("falls back to broad tech defaults when profile is empty", () => {
-    const keywords = buildSearchKeywords({});
+  it("includes DEFAULT_TECH_KEYWORDS in broad mode", () => {
+    const keywords = buildSearchKeywords({}, "broad");
     expect(keywords.length).toBeGreaterThan(20);
-    expect(DEFAULT_TECH_KEYWORDS.every((keyword) => keywords.includes(keyword))).toBe(
-      true
+    expect(DEFAULT_TECH_KEYWORDS.every((keyword) => keywords.includes(keyword))).toBe(true);
+  });
+});
+
+describe("buildSearchKeywords — strict mode", () => {
+  it("does NOT include DEFAULT_TECH_KEYWORDS in strict mode with empty profile", () => {
+    const keywords = buildSearchKeywords({}, "strict");
+    // strict + empty profile → no defaults added
+    expect(keywords.length).toBe(0);
+  });
+
+  it("uses preferences targetRoles over targetRole field", () => {
+    const prefs: JobPreferences = {
+      targetRoles: ["UI Engineer"],
+      workMode: "any",
+      seniority: "any",
+      tracks: ["frontend"],
+      includeProductRoles: false,
+      includeDesignRoles: false,
+      preferredLocations: [],
+      excludedKeywords: [],
+      minMatchScore: 40,
+    };
+    const keywords = buildSearchKeywords(
+      { targetRole: "Old Role", jobPreferences: prefs },
+      "strict"
     );
+    expect(keywords).toContain("ui engineer");
+    expect(keywords).not.toContain("old role");
+  });
+
+  it("uses preferences tracks over primaryTrack", () => {
+    const prefs: JobPreferences = {
+      targetRoles: [],
+      workMode: "any",
+      seniority: "any",
+      tracks: ["devops"],
+      includeProductRoles: false,
+      includeDesignRoles: false,
+      preferredLocations: [],
+      excludedKeywords: [],
+      minMatchScore: 40,
+    };
+    const keywords = buildSearchKeywords(
+      { primaryTrack: "frontend", jobPreferences: prefs },
+      "strict"
+    );
+    expect(keywords).toContain("devops");
+    // frontend track keywords not included since prefs overrides to devops
+    expect(keywords).not.toContain("react");
+  });
+
+  it("removes excludedKeywords from strict set", () => {
+    const prefs: JobPreferences = {
+      targetRoles: ["Backend Developer"],
+      workMode: "any",
+      seniority: "any",
+      tracks: ["backend"],
+      includeProductRoles: false,
+      includeDesignRoles: false,
+      preferredLocations: [],
+      excludedKeywords: ["backend"],
+      minMatchScore: 40,
+    };
+    const keywords = buildSearchKeywords({ jobPreferences: prefs }, "strict");
+    expect(keywords).not.toContain("backend");
+  });
+
+  it("includes includeProductRoles keywords when flagged", () => {
+    const prefs: JobPreferences = {
+      targetRoles: [],
+      workMode: "any",
+      seniority: "any",
+      tracks: [],
+      includeProductRoles: true,
+      includeDesignRoles: false,
+      preferredLocations: [],
+      excludedKeywords: [],
+      minMatchScore: 40,
+    };
+    const keywords = buildSearchKeywords({ jobPreferences: prefs }, "strict");
+    expect(keywords.some((k) => PRODUCT_KEYWORDS.includes(k))).toBe(true);
   });
 });
 

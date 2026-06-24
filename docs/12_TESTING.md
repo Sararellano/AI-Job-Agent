@@ -24,11 +24,14 @@ npm run test:watch  # modo watch durante desarrollo
 | Question engine | `src/lib/skills/question-engine.test.ts` | Cola de preguntas, perfil, respuestas |
 | Parse content | `src/lib/documents/parse-content.test.ts` | JSON + legacy markdown |
 | Profile | `src/lib/documents/profile.test.ts` | Mapeo settings ↔ perfil |
-| Onboarding state | `src/lib/onboarding/state.test.ts` | Estado desde DB |
+| Onboarding state | `src/lib/onboarding/state.test.ts` | Estado desde DB + jobPreferences |
 | Security validation | `src/lib/security/validation.test.ts` | UUID, templates, uploads, answers |
 | Rate limit | `src/lib/security/rate-limit.test.ts` | Límites por ventana |
+| Job preferences | `src/types/job-preferences.test.ts` | Parse, defaults, inferencia desde CV |
+| Keywords | `src/services/job-search/keywords.test.ts` | Modos strict/broad, exclusiones, tracks |
+| Relevance engine | `src/services/job-search/relevance.test.ts` | Score, exclusiones, remote, seniority, ranking |
 
-**Total:** 8 archivos, ~40 tests.
+**Total:** 11 archivos, ~120 tests.
 
 ## Qué no está cubierto (aún)
 

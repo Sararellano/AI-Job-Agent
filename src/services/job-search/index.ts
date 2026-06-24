@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JobSource } from "@/types/database";
 import type { CareerTrack, SkillEvidence } from "@/types/skills";
+import { parseJobPreferences } from "@/types/job-preferences";
 import { getJobSyncConfig } from "@/services/job-search/config";
 import { fetchGreenhouseJobs } from "@/services/job-search/connectors/greenhouse";
 import {
@@ -18,6 +19,7 @@ import { fetchWellfoundJobs } from "@/services/job-search/connectors/wellfound";
 import {
   buildSearchKeywords,
   type JobSearchProfile,
+  type KeywordMode,
 } from "@/services/job-search/keywords";
 import { upsertJobs, type UpsertJobsResult } from "@/services/job-search/upsert-jobs";
 
@@ -40,6 +42,8 @@ export interface JobSyncSummary {
 
 interface RunJobSyncOptions {
   profile?: JobSearchProfile;
+  /** "strict" for manual user sync; "broad" (default) for cron global sync. */
+  keywordMode?: KeywordMode;
 }
 
 async function syncConnectorJobs(
@@ -66,10 +70,11 @@ export async function runJobSync(
   options: RunJobSyncOptions = {}
 ): Promise<JobSyncSummary> {
   const config = getJobSyncConfig();
-  const keywords = buildSearchKeywords({
-    ...options.profile,
-    additionalKeywords: config.keywords,
-  });
+  const mode = options.keywordMode ?? "broad";
+  const keywords = buildSearchKeywords(
+    { ...options.profile, additionalKeywords: config.keywords },
+    mode
+  );
   const results: ConnectorSyncResult[] = [];
 
   for (const board of config.greenhouseBoards) {
@@ -256,16 +261,19 @@ export async function runJobSync(
 }
 
 /**
- * Maps persisted user settings to a job search profile.
+ * Maps persisted user settings to a unified job search profile.
  */
 export function settingsToJobSearchProfile(settings: {
   target_role?: string | null;
   primary_track?: string | null;
   skill_profile?: unknown;
+  job_preferences?: unknown;
 } | null): JobSearchProfile {
+  const rawPrefs = settings?.job_preferences ?? null;
   return {
     targetRole: settings?.target_role ?? null,
     primaryTrack: (settings?.primary_track as CareerTrack | null) ?? null,
     skillProfile: (settings?.skill_profile as SkillEvidence[] | null) ?? [],
+    jobPreferences: rawPrefs ? parseJobPreferences(rawPrefs) : null,
   };
 }
