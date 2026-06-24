@@ -17,7 +17,17 @@ import { formatProfileForPrompt } from "@/lib/documents/profile";
 
 interface GenerateDocumentInput {
   type: "cv" | "cover_letter";
-  job: Pick<Job, "title" | "company" | "description" | "summary" | "salary">;
+  job: Pick<
+    Job,
+    | "title"
+    | "company"
+    | "description"
+    | "summary"
+    | "salary"
+    | "url"
+    | "source"
+    | "requirements"
+  >;
   instructions: string;
   photoUrl?: string | null;
   profile: UserProfile;
@@ -135,6 +145,19 @@ function buildCoverTemplate(input: GenerateDocumentInput): CoverLetterDocument {
   };
 }
 
+function formatJobContext(job: GenerateDocumentInput["job"]): string {
+  const lines = [
+    `Job: ${job.title} at ${job.company}`,
+    `Salary: ${job.salary ?? "N/A"}`,
+    `Source: ${job.source ?? "unknown"}`,
+    `Posting URL: ${job.url ?? "N/A"}`,
+    `Summary: ${job.summary ?? ""}`,
+    `Requirements: ${job.requirements ?? ""}`,
+    `Description: ${job.description}`,
+  ];
+  return lines.join("\n");
+}
+
 function extractSkills(description: string): string[] {
   const keywords = [
     "React",
@@ -191,10 +214,7 @@ async function generateWithOpenAI(
 
 ${profileBlock}
 
-Job: ${input.job.title} at ${input.job.company}
-Salary: ${input.job.salary ?? "N/A"}
-Summary: ${input.job.summary ?? ""}
-Description: ${input.job.description}
+${formatJobContext(input.job)}
 Instructions: ${input.instructions}
 ${photoNote}`,
         },
