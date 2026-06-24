@@ -6,6 +6,8 @@ import {
 import { fetchJson } from "@/services/job-search/connectors/http";
 
 const INFOJOBS_API_BASE = "https://api.infojobs.net/api/1/offer";
+const INFOJOBS_COUNTRY = "espana";
+const MAX_PAGES_PER_QUERY = 2;
 
 interface InfoJobsOffer {
   id: string;
@@ -61,16 +63,11 @@ function mapInfoJobsOffer(offer: InfoJobsOffer): CreateJobInput | null {
   };
 }
 
-async function fetchInfoJobsPage(
+function buildInfoJobsParams(
   query: string,
   page: number,
-  province?: string
-): Promise<InfoJobsOffer[]> {
-  const auth = getInfoJobsAuthHeader();
-  if (!auth) {
-    throw new Error("InfoJobs credentials are not configured");
-  }
-
+  provinces: string[]
+): URLSearchParams {
   const params = new URLSearchParams({
     q: query,
     page: String(page),
@@ -78,10 +75,28 @@ async function fetchInfoJobsPage(
     order: "relevancia-desc",
   });
 
-  if (province) {
-    params.set("province", province);
+  if (provinces.length > 0) {
+    for (const province of provinces) {
+      params.append("province", province);
+    }
+  } else {
+    params.set("country", INFOJOBS_COUNTRY);
   }
 
+  return params;
+}
+
+async function fetchInfoJobsPage(
+  query: string,
+  page: number,
+  provinces: string[] = []
+): Promise<InfoJobsOffer[]> {
+  const auth = getInfoJobsAuthHeader();
+  if (!auth) {
+    throw new Error("InfoJobs credentials are not configured");
+  }
+
+  const params = buildInfoJobsParams(query, page, provinces);
   const data = await fetchJson<InfoJobsResponse>(
     `${INFOJOBS_API_BASE}?${params.toString()}`,
     {
@@ -94,17 +109,18 @@ async function fetchInfoJobsPage(
 
 /**
  * Fetches InfoJobs offers using the official API and profile-driven queries.
+ * When provinces is empty, searches all of Spain (country=espana).
  */
 export async function fetchInfoJobsJobs(
   keywords: string[] = [],
-  province?: string
+  provinces: string[] = []
 ): Promise<CreateJobInput[]> {
   const queries = buildInfoJobsQueries(keywords);
   const deduped = new Map<string, CreateJobInput>();
 
   for (const query of queries) {
-    for (let page = 1; page <= 2; page += 1) {
-      const offers = await fetchInfoJobsPage(query, page, province);
+    for (let page = 1; page <= MAX_PAGES_PER_QUERY; page += 1) {
+      const offers = await fetchInfoJobsPage(query, page, provinces);
       if (offers.length === 0) {
         break;
       }
@@ -123,4 +139,11 @@ export async function fetchInfoJobsJobs(
 
 export function hasInfoJobsCredentials(): boolean {
   return getInfoJobsAuthHeader() !== null;
+}
+
+export function formatInfoJobsSyncTarget(provinces: string[]): string {
+  if (provinces.length === 0) {
+    return "espana";
+  }
+  return provinces.join(",");
 }

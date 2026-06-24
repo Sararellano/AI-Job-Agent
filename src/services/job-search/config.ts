@@ -24,7 +24,7 @@ export interface JobSyncConfig {
   wellfoundEnabled: boolean;
   wellfoundRoleSlugs: string[];
   infoJobsEnabled: boolean;
-  infoJobsProvince: string | null;
+  infoJobsProvinces: string[];
   keywords: string[];
 }
 
@@ -78,7 +78,9 @@ export function getJobSyncConfig(): JobSyncConfig {
         ? wellfoundRoleSlugs
         : DEFAULT_WELLFOUND_ROLE_SLUGS,
     infoJobsEnabled: process.env.INFOJOBS_ENABLED !== "false",
-    infoJobsProvince: process.env.INFOJOBS_PROVINCE?.trim() || null,
+    infoJobsProvinces: parseEnvList(
+      process.env.INFOJOBS_PROVINCES ?? process.env.INFOJOBS_PROVINCE
+    ),
     keywords: parseEnvList(process.env.JOB_SYNC_KEYWORDS),
   };
 }

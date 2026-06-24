@@ -5,6 +5,7 @@ import { getJobSyncConfig } from "@/services/job-search/config";
 import { fetchGreenhouseJobs } from "@/services/job-search/connectors/greenhouse";
 import {
   fetchInfoJobsJobs,
+  formatInfoJobsSyncTarget,
   hasInfoJobsCredentials,
 } from "@/services/job-search/connectors/infojobs";
 import { fetchLeverJobs } from "@/services/job-search/connectors/lever";
@@ -220,19 +221,19 @@ export async function runJobSync(
 
   if (config.infoJobsEnabled && hasInfoJobsCredentials()) {
     try {
-      const jobs = await fetchInfoJobsJobs(keywords, config.infoJobsProvince ?? undefined);
+      const jobs = await fetchInfoJobsJobs(keywords, config.infoJobsProvinces);
       results.push(
         await syncConnectorJobs(
           supabase,
           "infojobs",
-          config.infoJobsProvince ?? "spain",
+          formatInfoJobsSyncTarget(config.infoJobsProvinces),
           jobs
         )
       );
     } catch (error) {
       results.push({
         source: "infojobs",
-        target: config.infoJobsProvince ?? "spain",
+        target: formatInfoJobsSyncTarget(config.infoJobsProvinces),
         fetched: 0,
         inserted: 0,
         skipped: 0,

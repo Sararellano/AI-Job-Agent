@@ -35,7 +35,7 @@ describe("fetchInfoJobsJobs", () => {
       })
     );
 
-    const jobs = await fetchInfoJobsJobs(["devops"], "madrid");
+    const jobs = await fetchInfoJobsJobs(["devops"], ["madrid"]);
 
     expect(jobs).toHaveLength(1);
     expect(jobs[0]).toMatchObject({

@@ -40,7 +40,7 @@ describe("getJobSyncConfig", () => {
         "devops-engineer",
       ]),
       infoJobsEnabled: true,
-      infoJobsProvince: null,
+      infoJobsProvinces: [],
       keywords: ["react", "typescript"],
     });
   });
