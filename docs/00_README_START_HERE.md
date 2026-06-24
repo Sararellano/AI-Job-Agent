@@ -14,6 +14,7 @@ Orden recomendado de ejecución:
 10. 10_COMPETITIVE_ADVANTAGE.md
 11. 11_SECURITY.md — **seguridad y despliegue**
 12. 12_TESTING.md — **tests unitarios**
+13. 13_JOB_SEARCH_PERSONALIZATION.md — **personalización de búsqueda**
 
 Estos documentos están pensados para abrirlos en Cursor y usarlos como
 contexto para construir el proyecto.

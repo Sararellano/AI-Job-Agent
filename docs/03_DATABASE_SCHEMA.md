@@ -17,7 +17,7 @@ created_at
 
 ## user_document_settings
 
-Default generation instructions per user.
+Default generation instructions and onboarding state per user.
 
 ```
 id
@@ -25,6 +25,19 @@ user_id              -- unique, references auth.users
 default_cv_instructions
 default_cover_letter_instructions
 updated_at
+-- CV & onboarding (migration 005)
+cv_file_url
+cv_file_name
+cv_parsed_raw
+cv_parsed_structured  -- jsonb: ParsedCvLocal
+primary_track         -- detected career track
+skill_profile         -- jsonb: SkillEvidence[]
+question_answers      -- jsonb: Record<string, QuestionAnswer>
+ai_cv_analysis        -- jsonb: AiCvAnalysis (optional)
+onboarding_completed  -- boolean
+onboarding_step       -- int (0–4)
+-- Job search personalization (migration 008)
+job_preferences       -- jsonb: JobPreferences (targetRoles, workMode, seniority, tracks…)
 ```
 
 ## applications
