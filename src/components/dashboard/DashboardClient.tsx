@@ -14,6 +14,7 @@ import {
 } from "@/types/documents";
 import { DefaultInstructionsSection } from "@/components/dashboard/DefaultInstructionsSection";
 import { AddJobForm } from "@/components/dashboard/AddJobForm";
+import { SyncJobsButton } from "@/components/dashboard/SyncJobsButton";
 import { JobOfferCard } from "@/components/dashboard/JobOfferCard";
 
 interface DashboardClientProps {
@@ -162,9 +163,12 @@ export function DashboardClient({
       />
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">
-          {t("dashboard.allOffers", { count: jobs.length })}
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">
+            {t("dashboard.allOffers", { count: jobs.length })}
+          </h2>
+          <SyncJobsButton />
+        </div>
         {jobs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-[var(--color-card-border)] p-8 text-center text-[var(--color-muted)]">
             {t("dashboard.noOffers")}

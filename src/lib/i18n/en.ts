@@ -52,6 +52,11 @@ export const en = {
   "addJob.source.wellfound": "Wellfound",
   "addJob.source.other": "Other",
 
+  "sync.button": "Sync job boards",
+  "sync.syncing": "Syncing…",
+  "sync.success": "{inserted} new offers added ({fetched} fetched).",
+  "sync.failed": "Could not sync job boards.",
+
   "profile.sharedTitle": "Shared profile",
   "profile.sharedSubtitle": "Name, role and contact details included in every CV and cover letter.",
   "profile.fullName": "Full name",

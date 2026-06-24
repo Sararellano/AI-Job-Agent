@@ -54,6 +54,11 @@ export const es: Record<EnKeys, string> = {
   "addJob.source.wellfound": "Wellfound",
   "addJob.source.other": "Otra",
 
+  "sync.button": "Sincronizar portales",
+  "sync.syncing": "Sincronizando…",
+  "sync.success": "{inserted} ofertas nuevas ({fetched} encontradas).",
+  "sync.failed": "No se pudieron sincronizar los portales.",
+
   "profile.sharedTitle": "Perfil compartido",
   "profile.sharedSubtitle": "Nombre, rol y contacto incluidos en cada CV y carta de presentación.",
   "profile.fullName": "Nombre completo",
