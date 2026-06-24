@@ -11,10 +11,14 @@ const JOB_SOURCES: JobSource[] = [
   "greenhouse",
   "lever",
   "remoteok",
-  "linkedin",
-  "infojobs",
-  "workable",
+  "remotive",
+  "weworkremotely",
+  "remoteco",
+  "getmanfred",
   "wellfound",
+  "infojobs",
+  "linkedin",
+  "workable",
   "other",
 ];
 

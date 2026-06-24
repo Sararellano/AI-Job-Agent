@@ -25,6 +25,10 @@ const VALID_JOB_SOURCES = new Set<JobSource>([
   "greenhouse",
   "lever",
   "remoteok",
+  "remotive",
+  "weworkremotely",
+  "remoteco",
+  "getmanfred",
   "linkedin",
   "infojobs",
   "workable",
@@ -188,6 +192,18 @@ export function inferJobSourceFromUrl(url: string): JobSource {
   }
   if (host.includes("remoteok.com")) {
     return "remoteok";
+  }
+  if (host.includes("remotive.com")) {
+    return "remotive";
+  }
+  if (host.includes("weworkremotely.com")) {
+    return "weworkremotely";
+  }
+  if (host.includes("remote.co")) {
+    return "remoteco";
+  }
+  if (host.includes("getmanfred.com")) {
+    return "getmanfred";
   }
   if (host.includes("linkedin.com")) {
     return "linkedin";

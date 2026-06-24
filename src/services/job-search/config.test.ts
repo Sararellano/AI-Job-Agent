@@ -27,6 +27,12 @@ describe("getJobSyncConfig", () => {
       greenhouseBoards: ["stripe", "airbnb"],
       leverCompanies: ["netflix"],
       remoteOkEnabled: true,
+      remotiveEnabled: true,
+      remotiveCategories: expect.arrayContaining(["software-dev"]),
+      wwrEnabled: true,
+      wwrCategories: expect.arrayContaining(["remote-programming-jobs"]),
+      remoteCoEnabled: true,
+      getManfredEnabled: true,
       wellfoundEnabled: true,
       wellfoundRoleSlugs: expect.arrayContaining([
         "frontend-engineer",

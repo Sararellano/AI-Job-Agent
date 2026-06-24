@@ -1,3 +1,6 @@
+import { DEFAULT_REMOTIVE_CATEGORIES } from "@/services/job-search/connectors/remotive";
+import { DEFAULT_WWR_CATEGORIES } from "@/services/job-search/connectors/weworkremotely";
+
 /**
  * Parses comma-separated environment variable lists.
  */
@@ -12,6 +15,12 @@ export interface JobSyncConfig {
   greenhouseBoards: string[];
   leverCompanies: string[];
   remoteOkEnabled: boolean;
+  remotiveEnabled: boolean;
+  remotiveCategories: string[];
+  wwrEnabled: boolean;
+  wwrCategories: string[];
+  remoteCoEnabled: boolean;
+  getManfredEnabled: boolean;
   wellfoundEnabled: boolean;
   wellfoundRoleSlugs: string[];
   infoJobsEnabled: boolean;
@@ -49,11 +58,20 @@ const DEFAULT_WELLFOUND_ROLE_SLUGS = [
  */
 export function getJobSyncConfig(): JobSyncConfig {
   const wellfoundRoleSlugs = parseEnvList(process.env.WELLFOUND_ROLE_SLUGS);
+  const remotiveCategories = parseEnvList(process.env.REMOTIVE_CATEGORIES);
+  const wwrCategories = parseEnvList(process.env.WWR_CATEGORIES);
 
   return {
     greenhouseBoards: parseEnvList(process.env.GREENHOUSE_BOARD_TOKENS),
     leverCompanies: parseEnvList(process.env.LEVER_COMPANIES),
     remoteOkEnabled: process.env.REMOTEOK_ENABLED !== "false",
+    remotiveEnabled: process.env.REMOTIVE_ENABLED !== "false",
+    remotiveCategories:
+      remotiveCategories.length > 0 ? remotiveCategories : DEFAULT_REMOTIVE_CATEGORIES,
+    wwrEnabled: process.env.WWR_ENABLED !== "false",
+    wwrCategories: wwrCategories.length > 0 ? wwrCategories : DEFAULT_WWR_CATEGORIES,
+    remoteCoEnabled: process.env.REMOTE_CO_ENABLED !== "false",
+    getManfredEnabled: process.env.GETMANFRED_ENABLED !== "false",
     wellfoundEnabled: process.env.WELLFOUND_ENABLED !== "false",
     wellfoundRoleSlugs:
       wellfoundRoleSlugs.length > 0

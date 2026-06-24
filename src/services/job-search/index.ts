@@ -8,7 +8,11 @@ import {
   hasInfoJobsCredentials,
 } from "@/services/job-search/connectors/infojobs";
 import { fetchLeverJobs } from "@/services/job-search/connectors/lever";
+import { fetchGetManfredJobs } from "@/services/job-search/connectors/getmanfred";
+import { fetchRemoteCoJobs } from "@/services/job-search/connectors/remoteco";
+import { fetchRemotiveJobs } from "@/services/job-search/connectors/remotive";
 import { fetchRemoteOkJobs } from "@/services/job-search/connectors/remoteok";
+import { fetchWeWorkRemotelyJobs } from "@/services/job-search/connectors/weworkremotely";
 import { fetchWellfoundJobs } from "@/services/job-search/connectors/wellfound";
 import {
   buildSearchKeywords,
@@ -113,6 +117,85 @@ export async function runJobSync(
         inserted: 0,
         skipped: 0,
         errors: [error instanceof Error ? error.message : "RemoteOK sync failed"],
+      });
+    }
+  }
+
+  if (config.remotiveEnabled) {
+    try {
+      const jobs = await fetchRemotiveJobs(keywords, config.remotiveCategories);
+      results.push(
+        await syncConnectorJobs(supabase, "remotive", "remotive.com", jobs)
+      );
+    } catch (error) {
+      results.push({
+        source: "remotive",
+        target: "remotive.com",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [error instanceof Error ? error.message : "Remotive sync failed"],
+      });
+    }
+  }
+
+  if (config.wwrEnabled) {
+    try {
+      const jobs = await fetchWeWorkRemotelyJobs(keywords, config.wwrCategories);
+      results.push(
+        await syncConnectorJobs(
+          supabase,
+          "weworkremotely",
+          "weworkremotely.com",
+          jobs
+        )
+      );
+    } catch (error) {
+      results.push({
+        source: "weworkremotely",
+        target: "weworkremotely.com",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [
+          error instanceof Error ? error.message : "We Work Remotely sync failed",
+        ],
+      });
+    }
+  }
+
+  if (config.remoteCoEnabled) {
+    try {
+      const jobs = await fetchRemoteCoJobs(keywords);
+      results.push(
+        await syncConnectorJobs(supabase, "remoteco", "remote.co", jobs)
+      );
+    } catch (error) {
+      results.push({
+        source: "remoteco",
+        target: "remote.co",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [error instanceof Error ? error.message : "Remote.co sync failed"],
+      });
+    }
+  }
+
+  if (config.getManfredEnabled) {
+    try {
+      const jobs = await fetchGetManfredJobs(keywords);
+      results.push(
+        await syncConnectorJobs(supabase, "getmanfred", "getmanfred.com", jobs)
+      );
+    } catch (error) {
+      results.push({
+        source: "getmanfred",
+        target: "getmanfred.com",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [error instanceof Error ? error.message : "GetManfred sync failed"],
       });
     }
   }

@@ -41,6 +41,10 @@ export async function POST() {
     config.greenhouseBoards.length > 0 ||
     config.leverCompanies.length > 0 ||
     config.remoteOkEnabled ||
+    config.remotiveEnabled ||
+    config.wwrEnabled ||
+    config.remoteCoEnabled ||
+    config.getManfredEnabled ||
     (config.wellfoundEnabled && config.wellfoundRoleSlugs.length > 0) ||
     (config.infoJobsEnabled && hasInfoJobsCredentials());
 
