@@ -5,6 +5,7 @@ import {
   buildSkillProfileFromCv,
 } from "@/lib/skills/question-engine";
 import type { DiscoveryQuestion, ParsedCvLocal } from "@/types/skills";
+import type { UserCareerContext } from "@/types/career";
 
 const frontendParsed: ParsedCvLocal = {
   version: 1,
@@ -22,9 +23,21 @@ const frontendParsed: ParsedCvLocal = {
   emails: ["dev@example.com"],
 };
 
+const techContext: UserCareerContext = {
+  sector: "tech",
+  roleFamily: "frontend",
+  targetRole: "Frontend Developer",
+};
+
+const marketingContext: UserCareerContext = {
+  sector: "marketing",
+  roleFamily: "digital_marketing",
+  targetRole: "Growth Marketer",
+};
+
 describe("buildQuestionQueue", () => {
   it("returns prioritized questions for a frontend CV", () => {
-    const questions = buildQuestionQueue(frontendParsed);
+    const questions = buildQuestionQueue(frontendParsed, techContext);
 
     expect(questions.length).toBeGreaterThan(0);
     expect(questions.length).toBeLessThanOrEqual(20);
@@ -33,13 +46,19 @@ describe("buildQuestionQueue", () => {
   });
 
   it("includes react transfer question for low-confidence React with strong JS", () => {
-    const questions = buildQuestionQueue(frontendParsed);
+    const questions = buildQuestionQueue(frontendParsed, techContext);
 
     expect(questions.some((q) => q.id === "q-react-transfer")).toBe(true);
   });
 
+  it("returns no skill questions for non-tech sectors without taxonomy", () => {
+    const questions = buildQuestionQueue(frontendParsed, marketingContext);
+
+    expect(questions.filter((q) => q.category === "skill")).toHaveLength(0);
+  });
+
   it("deduplicates questions by id", () => {
-    const questions = buildQuestionQueue(frontendParsed);
+    const questions = buildQuestionQueue(frontendParsed, techContext);
     const ids = questions.map((q) => q.id);
 
     expect(new Set(ids).size).toBe(ids.length);

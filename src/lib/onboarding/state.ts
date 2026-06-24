@@ -1,4 +1,5 @@
 import type { UserDocumentSettings } from "@/types/database";
+import { careerContextFromSettings } from "@/lib/skills/registry";
 import type {
   AiCvAnalysis,
   OnboardingState,
@@ -23,5 +24,19 @@ export function settingsToOnboarding(
     onboardingCompleted: settings?.onboarding_completed ?? false,
     onboardingStep: settings?.onboarding_step ?? 0,
     primaryTrack: (settings?.primary_track as CareerTrack) ?? "general",
+    careerContext: careerContextFromSettings(settings ?? null),
   };
+}
+
+/**
+ * Maps onboarding_step to the client wizard step index (0–4).
+ */
+export function resolveOnboardingWizardStep(
+  state: OnboardingState
+): 0 | 1 | 2 | 3 | 4 {
+  if (state.onboardingCompleted) return 4;
+  if (!state.parsed) return 0;
+  if (state.onboardingStep < 2) return 1;
+  if (state.onboardingStep < 3) return 2;
+  return 3;
 }

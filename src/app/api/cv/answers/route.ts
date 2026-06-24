@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { UserCareerContext } from "@/types/career";
 import {
   applyQuestionAnswers,
   buildQuestionQueue,
 } from "@/lib/skills/question-engine";
+import { careerContextFromSettings } from "@/lib/skills/registry";
 import { sanitizeQuestionAnswers } from "@/lib/security/validation";
 import type {
   ParsedCvLocal,
@@ -42,7 +44,8 @@ export async function POST(request: Request) {
   }
 
   const parsed = settings.cv_parsed_structured as ParsedCvLocal;
-  const questions = buildQuestionQueue(parsed);
+  const careerContext = careerContextFromSettings(settings);
+  const questions = buildQuestionQueue(parsed, careerContext);
   const baseProfile = (settings.skill_profile as SkillEvidence[]) ?? [];
   const mergedAnswers = {
     ...(settings.question_answers as Record<string, QuestionAnswer>),
@@ -69,7 +72,7 @@ export async function POST(request: Request) {
       question_answers: mergedAnswers,
       skill_profile: skillProfile,
       additional_info: additionalInfo,
-      onboarding_step: body.complete ? 3 : 2,
+      onboarding_step: body.complete ? 4 : 3,
       onboarding_completed: body.complete ?? false,
       updated_at: new Date().toISOString(),
     })
@@ -96,7 +99,9 @@ export async function GET() {
 
   const { data: settings } = await supabase
     .from("user_document_settings")
-    .select("cv_parsed_structured, question_answers, skill_profile")
+    .select(
+      "cv_parsed_structured, question_answers, skill_profile, sector, role_family, target_role"
+    )
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -105,7 +110,8 @@ export async function GET() {
   }
 
   const parsed = settings.cv_parsed_structured as ParsedCvLocal;
-  const questions = buildQuestionQueue(parsed);
+  const careerContext = careerContextFromSettings(settings);
+  const questions = buildQuestionQueue(parsed, careerContext);
 
   return NextResponse.json({
     questions,

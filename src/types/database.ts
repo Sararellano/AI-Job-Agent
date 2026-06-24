@@ -57,6 +57,8 @@ export interface UserDocumentSettings {
   cv_parsed_raw: string | null;
   cv_parsed_structured: Record<string, unknown> | null;
   primary_track: string | null;
+  sector: string | null;
+  role_family: string | null;
   skill_profile: Record<string, unknown>[] | null;
   question_answers: Record<string, string> | null;
   ai_cv_analysis: Record<string, unknown> | null;

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { extractTextFromCv } from "@/lib/cv/extract-text";
 import { parseCvHeuristics } from "@/lib/cv/parse-heuristics";
 import { buildSkillProfileFromCv } from "@/lib/skills/question-engine";
+import { inferCareerContext } from "@/lib/skills/registry";
 import {
   isAllowedCvUpload,
   MAX_CV_SIZE_MB,
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
 
   const parsed = parseCvHeuristics(rawText);
   const skillProfile = buildSkillProfileFromCv(parsed);
+  const careerContext = inferCareerContext(parsed);
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "pdf";
   const storagePath = `${user.id}/cv-${Date.now()}.${ext}`;
@@ -89,6 +91,9 @@ export async function POST(request: Request) {
         cv_parsed_raw: rawText.slice(0, 50000),
         cv_parsed_structured: parsed,
         primary_track: parsed.primaryTrack,
+        sector: careerContext.sector,
+        role_family: careerContext.roleFamily,
+        target_role: careerContext.targetRole || null,
         skill_profile: skillProfile,
         onboarding_step: 1,
         onboarding_completed: false,

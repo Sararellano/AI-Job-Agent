@@ -59,6 +59,8 @@ export interface DiscoveryQuestion {
   priority: number;
 }
 
+import type { UserCareerContext } from "@/types/career";
+
 export interface OnboardingState {
   cvFileUrl: string | null;
   cvFileName: string | null;
@@ -69,4 +71,5 @@ export interface OnboardingState {
   onboardingCompleted: boolean;
   onboardingStep: number;
   primaryTrack: CareerTrack;
+  careerContext: UserCareerContext;
 }

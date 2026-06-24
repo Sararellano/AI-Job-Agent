@@ -1,5 +1,5 @@
+import type { UserCareerContext } from "@/types/career";
 import type {
-  CareerTrack,
   DiscoveryQuestion,
   ParsedCvLocal,
   QuestionAnswer,
@@ -7,19 +7,24 @@ import type {
   SkillConfidence,
 } from "@/types/skills";
 import {
-  IMPOSTER_QUESTIONS,
-  SKILL_TAXONOMY,
-  TRACK_SKILL_KEYS,
-} from "@/lib/skills/taxonomy";
+  getMeritQuestions,
+  getRoleSkillKeys,
+  getTaxonomy,
+} from "@/lib/skills/registry";
 
 const MAX_QUESTIONS = 20;
 
 /**
- * Selects discovery questions from taxonomy — no AI, zero tokens.
+ * Selects discovery questions from sector taxonomy — no AI, zero tokens.
  */
-export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
+export function buildQuestionQueue(
+  parsed: ParsedCvLocal,
+  context: UserCareerContext
+): DiscoveryQuestion[] {
   const questions: DiscoveryQuestion[] = [];
   const seenIds = new Set<string>();
+  const taxonomy = getTaxonomy(context.sector);
+  const meritQuestions = getMeritQuestions(context.sector);
 
   function add(q: DiscoveryQuestion, priorityBoost = 0) {
     if (seenIds.has(q.id)) return;
@@ -27,17 +32,23 @@ export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
     questions.push({ ...q, priority: q.priority + priorityBoost });
   }
 
-  const tracks = [parsed.primaryTrack, ...parsed.secondaryTracks];
-  const skillKeys = new Set<string>();
+  const roleFamilies = new Set<string>([context.roleFamily]);
+  if (context.sector === "tech") {
+    roleFamilies.add(parsed.primaryTrack);
+    for (const track of parsed.secondaryTracks) {
+      roleFamilies.add(track);
+    }
+  }
 
-  for (const track of tracks) {
-    for (const key of TRACK_SKILL_KEYS[track] ?? []) {
+  const skillKeys = new Set<string>();
+  for (const roleFamily of roleFamilies) {
+    for (const key of getRoleSkillKeys(context.sector, roleFamily)) {
       skillKeys.add(key);
     }
   }
 
   for (const signal of parsed.signals) {
-    for (const [key, entry] of Object.entries(SKILL_TAXONOMY)) {
+    for (const [key, entry] of Object.entries(taxonomy)) {
       if (entry.signals.some((s) => signal.includes(s) || s.includes(signal))) {
         skillKeys.add(key);
       }
@@ -46,7 +57,7 @@ export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
 
   for (const skill of parsed.detectedSkills) {
     const key = skill.toLowerCase().replace(/[^a-z]/g, "");
-    for (const [taxKey, entry] of Object.entries(SKILL_TAXONOMY)) {
+    for (const [taxKey, entry] of Object.entries(taxonomy)) {
       if (
         entry.displayName.toLowerCase() === skill.toLowerCase() ||
         taxKey === key
@@ -57,7 +68,7 @@ export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
   }
 
   for (const key of skillKeys) {
-    const entry = SKILL_TAXONOMY[key];
+    const entry = taxonomy[key];
     if (!entry) continue;
 
     const confidence = entry.displayName
@@ -83,7 +94,8 @@ export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
   }
 
   if (
-    parsed.primaryTrack === "frontend" &&
+    context.sector === "tech" &&
+    context.roleFamily === "frontend" &&
     parsed.skillConfidence["React"] === "low" &&
     (parsed.skillConfidence["JavaScript"] === "high" ||
       parsed.detectedSkills.includes("JavaScript"))
@@ -99,10 +111,11 @@ export function buildQuestionQueue(parsed: ParsedCvLocal): DiscoveryQuestion[] {
     });
   }
 
-  for (const q of IMPOSTER_QUESTIONS) {
+  for (const q of meritQuestions) {
     if (q.category === "imposter") {
       if (
-        parsed.primaryTrack === "frontend" &&
+        context.sector === "tech" &&
+        context.roleFamily === "frontend" &&
         parsed.yearsExperienceEstimate &&
         parsed.yearsExperienceEstimate >= 5
       ) {

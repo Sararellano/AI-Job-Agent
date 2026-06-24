@@ -1,4 +1,6 @@
 import type { QuestionAnswer } from "@/types/skills";
+import type { EmploymentSector, UserCareerContext } from "@/types/career";
+import { isValidRoleFamily, isValidSector } from "@/lib/skills/registry";
 import {
   COVER_LETTER_TEMPLATES,
   CV_TEMPLATES,
@@ -116,4 +118,34 @@ export function isAllowedPhotoType(mimeType: string): boolean {
   return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(
     mimeType
   );
+}
+
+/**
+ * Validates and normalizes sector / role family from onboarding forms.
+ */
+export function sanitizeCareerContext(input: {
+  sector?: unknown;
+  roleFamily?: unknown;
+  targetRole?: unknown;
+}): UserCareerContext | null {
+  if (typeof input.sector !== "string" || !isValidSector(input.sector)) {
+    return null;
+  }
+
+  const sector = input.sector as EmploymentSector;
+  const roleFamily =
+    typeof input.roleFamily === "string" ? input.roleFamily.trim() : "";
+
+  if (!roleFamily || !isValidRoleFamily(sector, roleFamily)) {
+    return null;
+  }
+
+  return {
+    sector,
+    roleFamily,
+    targetRole: sanitizeText(
+      typeof input.targetRole === "string" ? input.targetRole : "",
+      MAX_PROFILE_FIELD_LENGTH
+    ),
+  };
 }

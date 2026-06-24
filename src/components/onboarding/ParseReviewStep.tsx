@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
+import type { UserCareerContext } from "@/types/career";
 import type { AiCvAnalysis, ParsedCvLocal, SkillEvidence } from "@/types/skills";
 import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface ParseReviewStepProps {
   parsed: ParsedCvLocal;
   skillProfile: SkillEvidence[];
+  careerContext: UserCareerContext;
   aiAnalysis: AiCvAnalysis | null;
   onContinue: () => void;
   onAiEnhanced: (data: {
@@ -24,6 +26,7 @@ interface ParseReviewStepProps {
 export function ParseReviewStep({
   parsed,
   skillProfile,
+  careerContext,
   aiAnalysis,
   onContinue,
   onAiEnhanced,
@@ -62,8 +65,15 @@ export function ParseReviewStep({
         {t("onboarding.step2Subtitle")}
       </p>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Stat label={t("onboarding.track")} value={parsed.primaryTrack} />
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat
+          label={t("career.sectorLabel")}
+          value={t(`career.sector.${careerContext.sector}` as Parameters<typeof t>[0])}
+        />
+        <Stat
+          label={t("career.roleFamilyLabel")}
+          value={t(`career.roleFamily.${careerContext.roleFamily}` as Parameters<typeof t>[0])}
+        />
         <Stat
           label={t("onboarding.experience")}
           value={
