@@ -40,7 +40,14 @@ export function SyncJobsButton({ className }: SyncJobsButtonProps) {
     }
 
     const { inserted = 0, fetched = 0 } = data.totals ?? {};
-    setMessage(t("sync.success", { inserted: String(inserted), fetched: String(fetched) }));
+    const keywordsUsed = (data as { keywordsUsed?: string[] }).keywordsUsed ?? [];
+    const keywordHint =
+      keywordsUsed.length > 0
+        ? ` ${t("sync.keywordsUsed", { keywords: keywordsUsed.slice(0, 5).join(", ") })}`
+        : "";
+    setMessage(
+      `${t("sync.success", { inserted: String(inserted), fetched: String(fetched) })}${keywordHint}`
+    );
     router.refresh();
   }
 

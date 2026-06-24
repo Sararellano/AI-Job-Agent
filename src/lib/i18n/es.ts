@@ -58,6 +58,7 @@ export const es: Record<EnKeys, string> = {
   "sync.syncing": "Sincronizando…",
   "sync.success": "{inserted} ofertas nuevas ({fetched} encontradas).",
   "sync.failed": "No se pudieron sincronizar los portales.",
+  "sync.keywordsUsed": "Keywords: {keywords}",
 
   "profile.sharedTitle": "Perfil compartido",
   "profile.sharedSubtitle": "Nombre, rol y contacto incluidos en cada CV y carta de presentación.",

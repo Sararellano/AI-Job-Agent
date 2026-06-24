@@ -27,6 +27,14 @@ describe("getJobSyncConfig", () => {
       greenhouseBoards: ["stripe", "airbnb"],
       leverCompanies: ["netflix"],
       remoteOkEnabled: true,
+      wellfoundEnabled: true,
+      wellfoundRoleSlugs: expect.arrayContaining([
+        "frontend-engineer",
+        "product-manager",
+        "devops-engineer",
+      ]),
+      infoJobsEnabled: true,
+      infoJobsProvince: null,
       keywords: ["react", "typescript"],
     });
   });

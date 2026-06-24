@@ -1,9 +1,10 @@
 import type { CreateJobInput } from "@/types/database";
+import { filterJobsByKeywords } from "@/services/job-search/keywords";
 import {
   formatSalaryRange,
-  matchesKeywords,
   stripHtml,
 } from "@/services/job-search/text";
+import { fetchJson } from "@/services/job-search/connectors/http";
 
 const REMOTEOK_API_URL = "https://remoteok.com/api";
 const FETCH_TIMEOUT_MS = 20_000;
@@ -86,13 +87,9 @@ export async function fetchRemoteOkJobs(
 ): Promise<CreateJobInput[]> {
   const jobs = await fetchRemoteOkPayload();
 
-  return jobs
+  const mapped = jobs
     .map((job) => mapRemoteOkJob(job))
-    .filter((job): job is CreateJobInput => job !== null)
-    .filter((job) =>
-      matchesKeywords(
-        `${job.title} ${job.company} ${job.description} ${job.requirements ?? ""}`,
-        keywords
-      )
-    );
+    .filter((job): job is CreateJobInput => job !== null);
+
+  return filterJobsByKeywords(mapped, keywords);
 }

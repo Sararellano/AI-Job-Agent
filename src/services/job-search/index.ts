@@ -1,9 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JobSource } from "@/types/database";
+import type { CareerTrack, SkillEvidence } from "@/types/skills";
 import { getJobSyncConfig } from "@/services/job-search/config";
 import { fetchGreenhouseJobs } from "@/services/job-search/connectors/greenhouse";
+import {
+  fetchInfoJobsJobs,
+  hasInfoJobsCredentials,
+} from "@/services/job-search/connectors/infojobs";
 import { fetchLeverJobs } from "@/services/job-search/connectors/lever";
 import { fetchRemoteOkJobs } from "@/services/job-search/connectors/remoteok";
+import { fetchWellfoundJobs } from "@/services/job-search/connectors/wellfound";
+import {
+  buildSearchKeywords,
+  type JobSearchProfile,
+} from "@/services/job-search/keywords";
 import { upsertJobs, type UpsertJobsResult } from "@/services/job-search/upsert-jobs";
 
 export interface ConnectorSyncResult extends UpsertJobsResult {
@@ -20,10 +30,11 @@ export interface JobSyncSummary {
     skipped: number;
     errors: number;
   };
+  keywordsUsed: string[];
 }
 
 interface RunJobSyncOptions {
-  keywords?: string[];
+  profile?: JobSearchProfile;
 }
 
 async function syncConnectorJobs(
@@ -50,12 +61,15 @@ export async function runJobSync(
   options: RunJobSyncOptions = {}
 ): Promise<JobSyncSummary> {
   const config = getJobSyncConfig();
-  const keywords = options.keywords ?? config.keywords;
+  const keywords = buildSearchKeywords({
+    ...options.profile,
+    additionalKeywords: config.keywords,
+  });
   const results: ConnectorSyncResult[] = [];
 
   for (const board of config.greenhouseBoards) {
     try {
-      const jobs = await fetchGreenhouseJobs(board);
+      const jobs = await fetchGreenhouseJobs(board, keywords);
       results.push(await syncConnectorJobs(supabase, "greenhouse", board, jobs));
     } catch (error) {
       results.push({
@@ -71,7 +85,7 @@ export async function runJobSync(
 
   for (const company of config.leverCompanies) {
     try {
-      const jobs = await fetchLeverJobs(company);
+      const jobs = await fetchLeverJobs(company, keywords);
       results.push(await syncConnectorJobs(supabase, "lever", company, jobs));
     } catch (error) {
       results.push({
@@ -103,6 +117,47 @@ export async function runJobSync(
     }
   }
 
+  if (config.wellfoundEnabled && config.wellfoundRoleSlugs.length > 0) {
+    try {
+      const jobs = await fetchWellfoundJobs(config.wellfoundRoleSlugs, keywords);
+      results.push(
+        await syncConnectorJobs(supabase, "wellfound", "wellfound.com", jobs)
+      );
+    } catch (error) {
+      results.push({
+        source: "wellfound",
+        target: "wellfound.com",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [error instanceof Error ? error.message : "Wellfound sync failed"],
+      });
+    }
+  }
+
+  if (config.infoJobsEnabled && hasInfoJobsCredentials()) {
+    try {
+      const jobs = await fetchInfoJobsJobs(keywords, config.infoJobsProvince ?? undefined);
+      results.push(
+        await syncConnectorJobs(
+          supabase,
+          "infojobs",
+          config.infoJobsProvince ?? "spain",
+          jobs
+        )
+      );
+    } catch (error) {
+      results.push({
+        source: "infojobs",
+        target: config.infoJobsProvince ?? "spain",
+        fetched: 0,
+        inserted: 0,
+        skipped: 0,
+        errors: [error instanceof Error ? error.message : "InfoJobs sync failed"],
+      });
+    }
+  }
+
   const totals = results.reduce(
     (acc, result) => ({
       fetched: acc.fetched + result.fetched,
@@ -113,5 +168,20 @@ export async function runJobSync(
     { fetched: 0, inserted: 0, skipped: 0, errors: 0 }
   );
 
-  return { results, totals };
+  return { results, totals, keywordsUsed: keywords.slice(0, 20) };
+}
+
+/**
+ * Maps persisted user settings to a job search profile.
+ */
+export function settingsToJobSearchProfile(settings: {
+  target_role?: string | null;
+  primary_track?: string | null;
+  skill_profile?: unknown;
+} | null): JobSearchProfile {
+  return {
+    targetRole: settings?.target_role ?? null,
+    primaryTrack: (settings?.primary_track as CareerTrack | null) ?? null,
+    skillProfile: (settings?.skill_profile as SkillEvidence[] | null) ?? [],
+  };
 }
