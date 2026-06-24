@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   inferJobSourceFromUrl,
   isAllowedCvUpload,
+  isPlaceholderJobUrl,
   isValidApplicationStatus,
   isValidJobUrl,
   isValidQuestionAnswer,
@@ -93,6 +94,22 @@ describe("normalizeJobUrl", () => {
   it("rejects unsafe protocols", () => {
     expect(normalizeJobUrl("javascript:alert(1)")).toBeNull();
     expect(normalizeJobUrl("ftp://example.com/job")).toBeNull();
+  });
+
+  it("rejects placeholder demo hosts", () => {
+    expect(normalizeJobUrl("https://example.com/jobs/frontend-techflow")).toBeNull();
+    expect(normalizeJobUrl("https://jobs.lever.co/acme/abc")).toBe(
+      "https://jobs.lever.co/acme/abc"
+    );
+  });
+});
+
+describe("isPlaceholderJobUrl", () => {
+  it("detects example.com demo postings", () => {
+    expect(isPlaceholderJobUrl("https://example.com/jobs/1")).toBe(true);
+    expect(isPlaceholderJobUrl("https://boards.greenhouse.io/acme/jobs/1")).toBe(
+      false
+    );
   });
 });
 

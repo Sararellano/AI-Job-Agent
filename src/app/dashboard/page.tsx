@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { settingsToProfile } from "@/lib/documents/profile";
 import { settingsToOnboarding } from "@/lib/onboarding/state";
+import { isPlaceholderJobUrl } from "@/lib/security/validation";
 import type { Job, JobApplication, JobWithApplication } from "@/types/database";
 import {
   DEFAULT_CV_TEMPLATE,
@@ -62,12 +63,12 @@ export default async function DashboardPage() {
     (applications ?? []).map((a) => [a.job_id, a as JobApplication])
   );
 
-  const jobsWithApplications: JobWithApplication[] = (jobs ?? []).map(
-    (job) => ({
+  const jobsWithApplications: JobWithApplication[] = (jobs ?? [])
+    .filter((job) => !isPlaceholderJobUrl(job.url))
+    .map((job) => ({
       ...(job as Job),
       application: applicationMap.get(job.id) ?? null,
-    })
-  );
+    }));
 
   const profile = settingsToProfile(settings);
   const onboarding = settingsToOnboarding(settings);

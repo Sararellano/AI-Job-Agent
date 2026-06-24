@@ -223,6 +223,12 @@ export const en = {
   "dashboard.noMatches": "No offers match your current preferences. Lower the minimum score or broaden your tracks.",
   "dashboard.filterLabel": "View:",
   "dashboard.syncMatched": "{matched} of {total} match your profile.",
+  "dashboard.sourceFilterTitle": "Platforms",
+  "dashboard.sourceFilterSelectAll": "All",
+  "dashboard.sourceFilterClearAll": "None",
+  "dashboard.sourceFilterShowing": "Showing {filtered} of {total} offers",
+  "dashboard.noSourceMatches":
+    "No offers for the selected platforms. Select at least one platform.",
 } as const;
 
 export type EnKeys = keyof typeof en;

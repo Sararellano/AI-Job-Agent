@@ -39,6 +39,33 @@ const VALID_JOB_SOURCES = new Set<JobSource>([
 
 const BLOCKED_URL_PROTOCOLS = /^(javascript|data|vbscript|file):/i;
 
+const PLACEHOLDER_JOB_HOSTS = new Set([
+  "example.com",
+  "example.org",
+  "example.net",
+]);
+
+/**
+ * Returns true for demo/placeholder job URLs that must not be stored or shown.
+ */
+export function isPlaceholderJobUrl(value: string | null | undefined): boolean {
+  if (!value?.trim()) {
+    return false;
+  }
+
+  try {
+    const host = new URL(value.trim()).hostname.toLowerCase();
+    return (
+      PLACEHOLDER_JOB_HOSTS.has(host) ||
+      host.endsWith(".example.com") ||
+      host.endsWith(".example.org") ||
+      host.endsWith(".example.net")
+    );
+  } catch {
+    return false;
+  }
+}
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -156,6 +183,10 @@ export function normalizeJobUrl(value: string): string | null {
   try {
     const parsed = new URL(trimmed);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+
+    if (isPlaceholderJobUrl(parsed.toString())) {
       return null;
     }
 

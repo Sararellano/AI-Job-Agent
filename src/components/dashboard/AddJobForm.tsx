@@ -5,22 +5,7 @@ import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/contexts/LocaleProvider";
 import type { Job, JobSource } from "@/types/database";
-
-const JOB_SOURCES: JobSource[] = [
-  "manual",
-  "greenhouse",
-  "lever",
-  "remoteok",
-  "remotive",
-  "weworkremotely",
-  "remoteco",
-  "getmanfred",
-  "wellfound",
-  "infojobs",
-  "linkedin",
-  "workable",
-  "other",
-];
+import { ALL_JOB_SOURCES } from "@/lib/jobs/job-sources";
 
 interface AddJobFormProps {
   onJobAdded: (job: Job) => void;
@@ -168,7 +153,7 @@ export function AddJobForm({ onJobAdded }: AddJobFormProps) {
                 onChange={(e) => setSource(e.target.value as JobSource)}
                 className="w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               >
-                {JOB_SOURCES.map((value) => (
+                {ALL_JOB_SOURCES.map((value) => (
                   <option key={value} value={value}>
                     {t(`addJob.source.${value}`)}
                   </option>

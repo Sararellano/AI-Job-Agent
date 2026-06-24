@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isPlaceholderJobUrl } from "@/lib/security/validation";
 import { filterAndRankJobs } from "@/services/job-search/relevance";
 import { buildSearchKeywords } from "@/services/job-search/keywords";
 import { settingsToJobSearchProfile } from "@/services/job-search";
@@ -53,7 +54,9 @@ export async function GET(request: Request) {
     .select("*")
     .order("created_at", { ascending: false });
 
-  const jobs = (rawJobs ?? []) as Job[];
+  const jobs = (rawJobs ?? []).filter(
+    (job) => !isPlaceholderJobUrl(job.url)
+  ) as Job[];
 
   if (!settings || jobs.length === 0) {
     return NextResponse.json({

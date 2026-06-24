@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LogOut, UserCircle, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -19,7 +19,13 @@ import { AddJobForm } from "@/components/dashboard/AddJobForm";
 import { SyncJobsButton } from "@/components/dashboard/SyncJobsButton";
 import { JobOfferCard } from "@/components/dashboard/JobOfferCard";
 import { JobPreferencesEditor } from "@/components/dashboard/JobPreferencesEditor";
+import { JobSourceFilter } from "@/components/dashboard/JobSourceFilter";
 import type { JobWithRelevance, MatchedJobsResponse } from "@/app/api/jobs/matched/route";
+import {
+  collectJobSources,
+  filterJobsBySources,
+} from "@/lib/jobs/job-sources";
+import type { JobSource } from "@/types/database";
 
 type TabView = "matched" | "all";
 
@@ -66,6 +72,9 @@ export function DashboardClient({
   const [activeTab, setActiveTab] = useState<TabView>("matched");
   const [matchedJobs, setMatchedJobs] = useState<JobWithRelevance[]>([]);
   const [matchLoading, setMatchLoading] = useState(true);
+  const [selectedSources, setSelectedSources] = useState<Set<JobSource> | null>(
+    null
+  );
 
   const fetchMatched = useCallback(async (showAll: boolean) => {
     setMatchLoading(true);
@@ -83,6 +92,10 @@ export function DashboardClient({
   useEffect(() => {
     fetchMatched(activeTab === "all");
   }, [activeTab, fetchMatched]);
+
+  useEffect(() => {
+    setSelectedSources(null);
+  }, [activeTab]);
 
   // Rebuild scorecard map for quick lookup
   const scoreMap = new Map(
@@ -118,12 +131,39 @@ export function DashboardClient({
   }
 
   // Compute display list: for "matched" tab use scored order; for "all" use jobs list
-  const displayJobs: JobWithApplication[] =
-    activeTab === "matched"
-      ? matchedJobs
-          .map((mj) => jobs.find((j) => j.id === mj.id) ?? { ...mj, application: null })
-          .filter(Boolean) as JobWithApplication[]
-      : jobs;
+  const baseDisplayJobs: JobWithApplication[] = useMemo(
+    () =>
+      activeTab === "matched"
+        ? (matchedJobs
+            .map(
+              (mj) =>
+                jobs.find((j) => j.id === mj.id) ?? { ...mj, application: null }
+            )
+            .filter(Boolean) as JobWithApplication[])
+        : jobs,
+    [activeTab, matchedJobs, jobs]
+  );
+
+  const availableSources = useMemo(
+    () => collectJobSources(baseDisplayJobs),
+    [baseDisplayJobs]
+  );
+
+  const effectiveSelectedSources = useMemo(() => {
+    if (selectedSources !== null) {
+      return selectedSources;
+    }
+    return new Set(availableSources);
+  }, [selectedSources, availableSources]);
+
+  const displayJobs = useMemo(
+    () => filterJobsBySources(baseDisplayJobs, effectiveSelectedSources),
+    [baseDisplayJobs, effectiveSelectedSources]
+  );
+
+  const hasSourceFilter =
+    availableSources.length > 0 &&
+    effectiveSelectedSources.size < availableSources.length;
 
   const hasPreferences = Boolean(onboarding.jobPreferences);
 
@@ -260,13 +300,30 @@ export function DashboardClient({
           <SyncJobsButton onSynced={() => fetchMatched(activeTab === "all")} />
         </div>
 
+        <JobSourceFilter
+          jobs={baseDisplayJobs}
+          selectedSources={effectiveSelectedSources}
+          onChange={setSelectedSources}
+        />
+
+        {hasSourceFilter && displayJobs.length > 0 && (
+          <p className="mb-3 text-xs text-[var(--color-muted)]">
+            {t("dashboard.sourceFilterShowing", {
+              filtered: String(displayJobs.length),
+              total: String(baseDisplayJobs.length),
+            })}
+          </p>
+        )}
+
         {matchLoading ? (
           <p className="py-8 text-center text-sm text-[var(--color-muted)]">…</p>
         ) : displayJobs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-[var(--color-card-border)] p-8 text-center text-[var(--color-muted)]">
-            {activeTab === "matched"
-              ? t("dashboard.noMatches")
-              : t("dashboard.noOffers")}
+            {baseDisplayJobs.length > 0 && effectiveSelectedSources.size === 0
+              ? t("dashboard.noSourceMatches")
+              : activeTab === "matched"
+                ? t("dashboard.noMatches")
+                : t("dashboard.noOffers")}
           </p>
         ) : (
           <div className="space-y-4">

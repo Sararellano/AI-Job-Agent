@@ -81,33 +81,3 @@ create policy "applications_update_own"
   on public.applications for update
   to authenticated
   using (auth.uid() = user_id);
-
--- Seed sample jobs
-insert into public.jobs (title, company, description, summary, salary, url, source) values
-(
-  'Frontend Developer',
-  'TechFlow',
-  'We are looking for a Frontend Developer with strong React and TypeScript skills. You will build user-facing features, collaborate with design, and improve performance. Requirements: 3+ years experience, React, TypeScript, CSS, Git.',
-  'Remote-first startup building SaaS tools. Strong engineering culture, flexible hours, learning budget.',
-  '45.000 – 55.000 €',
-  'https://example.com/jobs/frontend-techflow',
-  'greenhouse'
-),
-(
-  'React Engineer',
-  'DataBridge',
-  'Join our product team to develop scalable React applications. Experience with Next.js, state management, and API integration required. English proficiency mandatory.',
-  'B2B data platform, Series B, hybrid Berlin. Modern stack, international team.',
-  '60.000 – 70.000 €',
-  'https://example.com/jobs/react-databridge',
-  'lever'
-),
-(
-  'Senior Frontend Developer',
-  'CloudNine',
-  'Lead frontend initiatives for our cloud dashboard. Mentor juniors, define architecture, ship features with React and Tailwind. AWS knowledge is a plus.',
-  'Enterprise cloud provider. Formal culture, excellent benefits, on-site Munich with remote options.',
-  '75.000 €+',
-  'https://example.com/jobs/senior-cloudnine',
-  'remoteok'
-);

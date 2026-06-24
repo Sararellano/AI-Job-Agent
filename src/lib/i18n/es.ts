@@ -225,4 +225,10 @@ export const es: Record<EnKeys, string> = {
   "dashboard.noMatches": "Ninguna oferta coincide con tus preferencias. Baja la puntuación mínima o amplía los tracks.",
   "dashboard.filterLabel": "Ver:",
   "dashboard.syncMatched": "{matched} de {total} coinciden con tu perfil.",
+  "dashboard.sourceFilterTitle": "Plataformas",
+  "dashboard.sourceFilterSelectAll": "Todas",
+  "dashboard.sourceFilterClearAll": "Ninguna",
+  "dashboard.sourceFilterShowing": "Mostrando {filtered} de {total} ofertas",
+  "dashboard.noSourceMatches":
+    "Ninguna oferta con las plataformas seleccionadas. Marca al menos una plataforma.",
 };
