@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useT } from "@/contexts/LocaleProvider";
 import type { AiCvAnalysis, OnboardingState, ParsedCvLocal } from "@/types/skills";
@@ -65,9 +66,12 @@ export function OnboardingClient({ initial, initialProfile }: OnboardingClientPr
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="relative mx-auto max-w-2xl px-4 py-8">
+      <div className="absolute right-4 top-8 z-10 surface-card rounded-xl p-1 backdrop-blur-sm">
+        <LanguageSwitch />
+      </div>
       <ScrollReveal>
-        <header className="mb-8 pr-20">
+        <header className="mb-8">
           <p className="text-sm text-[var(--color-muted)]">
             {t("onboarding.backOnboarding")}
           </p>

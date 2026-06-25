@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useT } from "@/contexts/LocaleProvider";
 import type { EnKeys } from "@/lib/i18n";
@@ -15,7 +16,10 @@ export function AuthPageShell({ titleKey, subtitleKey, children }: AuthPageShell
   const t = useT();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] p-4">
+    <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] p-4">
+      <div className="absolute right-4 top-4 z-10 surface-card rounded-xl p-1 backdrop-blur-sm">
+        <LanguageSwitch />
+      </div>
       <ScrollReveal className="w-full max-w-md">
         <div className="surface-card p-8">
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[var(--color-accent)]">
