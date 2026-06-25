@@ -132,15 +132,36 @@ function formatCvInstructions(extraction: CvProfileExtraction): string {
 
 function formatCoverInstructions(extraction: CvProfileExtraction): string {
   const role = extraction.profile.targetRole || "professional";
-  const summary = extraction.summary
-    ? extraction.summary.slice(0, 400)
-    : `Highlight relevant experience as a ${role}.`;
+  const sections: string[] = [
+    "Write a one-page formal cover letter tailored to the job.",
+    "Address the hiring manager. Use the candidate's real background — do not invent employers or dates.",
+    "Reference specific roles, companies and achievements from the background below.",
+  ];
 
-  return [
-    "Write a one-page formal cover letter. Address the hiring manager.",
-    "Use the candidate's real background — do not invent employers or dates.",
-    `\nBackground to reference:\n${summary}`,
-  ].join("\n");
+  if (extraction.summary) {
+    sections.push(`\nProfessional summary:\n${extraction.summary}`);
+  }
+
+  if (extraction.experience.length > 0) {
+    sections.push("\nKey experience to reference:");
+    for (const exp of extraction.experience.slice(0, 3)) {
+      const header = [exp.role, exp.company, exp.period].filter(Boolean).join(" — ");
+      sections.push(`- ${header}`);
+      for (const h of exp.highlights.slice(0, 2)) {
+        sections.push(`  • ${h}`);
+      }
+    }
+  }
+
+  if (extraction.skills.length > 0) {
+    sections.push(`\nRelevant skills: ${extraction.skills.slice(0, 12).join(", ")}`);
+  }
+
+  if (!extraction.summary && extraction.experience.length === 0) {
+    sections.push(`\nHighlight relevant experience as a ${role}.`);
+  }
+
+  return sections.join("\n").trim();
 }
 
 function extractPhone(text: string): string | null {

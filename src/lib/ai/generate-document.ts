@@ -14,6 +14,10 @@ import {
   serializeCoverLetterContent,
 } from "@/lib/documents/parse-content";
 import { formatProfileForPrompt } from "@/lib/documents/profile";
+import {
+  buildCoverFromExtraction,
+  formatCoverGuidelinesForPrompt,
+} from "@/lib/documents/build-cover-content";
 import type { CvProfileExtraction } from "@/types/skills";
 
 interface GenerateDocumentInput {
@@ -51,7 +55,7 @@ export async function generateDocument(
   return input.type === "cv"
     ? serializeCvContent(buildCvTemplate({ ...input, documentLanguage: lang }))
     : serializeCoverLetterContent(
-        buildCoverTemplate({ ...input, documentLanguage: lang })
+        buildCoverFromExtraction({ ...input, documentLanguage: lang })
       );
 }
 
@@ -128,43 +132,6 @@ function buildCvTemplate(input: GenerateDocumentInput): CvDocument {
           `Salary range: ${expectedSalary}`,
           ...skills.slice(0, 4).map((s) => `Strong ${s} experience`),
         ],
-  };
-}
-
-function buildCoverTemplate(input: GenerateDocumentInput): CoverLetterDocument {
-  const { job, profile, cvExtraction } = input;
-  const es = input.documentLanguage === "es";
-  const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
-  const locale = es ? "es-ES" : "en-GB";
-  const background =
-    cvExtraction?.summary?.slice(0, 400) ||
-    input.instructions.slice(0, 400);
-
-  return {
-    version: 1,
-    templateId: input.templateId ?? DEFAULT_COVER_TEMPLATE,
-    date: new Date().toLocaleDateString(locale, {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }),
-    greeting: es ? "Estimado equipo de selección," : "Dear Hiring Manager,",
-    paragraphs: es
-      ? [
-          `Me dirijo a ustedes para expresar mi interés en el puesto de ${job.title} en ${job.company}. Como ${profile.targetRole || "profesional"} con experiencia relevante, confío en poder aportar valor al equipo.`,
-          job.summary
-            ? `Según mi investigación, ${job.summary}`
-            : "La descripción del puesto encaja con mi trayectoria y objetivos profesionales.",
-          `Me encantaría conversar sobre cómo mis habilidades encajan con sus necesidades. ${background}`,
-        ]
-      : [
-          `I am writing to express my interest in the ${job.title} position at ${job.company}. As a ${profile.targetRole || "professional"} with experience relevant to your requirements, I am confident I can contribute effectively to your team.`,
-          job.summary
-            ? `From my research, ${job.summary}`
-            : `Your job description resonates with my background and career goals.`,
-          `I would welcome the opportunity to discuss how my skills align with your needs. ${background}`,
-        ],
-    closing: es ? `Atentamente,\n${name}` : `Sincerely,\n${name}`,
   };
 }
 
@@ -342,7 +309,15 @@ function buildAiMessages(input: GenerateDocumentInput): {
 
   const systemPrompt = isCv
     ? `You generate CV content as JSON only. Write ALL text fields in ${langLabel}. Use ONLY the candidate's real experience, education and skills from the provided CV data — never invent employers or dates. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
-    : `You generate cover letter content as JSON only. Write ALL text fields in ${langLabel}. Use the candidate's real background — do not invent facts. Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
+    : `You generate tailored cover letter content as JSON only. Write ALL text fields in ${langLabel}.
+Rules:
+- Write 4-5 substantive paragraphs in the "paragraphs" array.
+- Reference specific employers, roles, dates and achievements from the candidate's REAL CV DATA.
+- Connect the candidate's skills and experience to the job requirements.
+- Explain genuine motivation for this company and role.
+- NEVER copy "Generation guidelines" or instruction text into paragraphs — those are meta-instructions only.
+- Do not invent employers, dates or achievements not present in the CV data.
+Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
 
   const photoNote = input.photoUrl
     ? `Include photo reference in summary if relevant: ${input.photoUrl}`
@@ -350,6 +325,7 @@ function buildAiMessages(input: GenerateDocumentInput): {
 
   const profileBlock = formatProfileForPrompt(input.profile);
   const cvDataBlock = formatCvExtractionForPrompt(input.cvExtraction);
+  const guidelines = formatCoverGuidelinesForPrompt(input.instructions);
 
   return {
     messages: [
@@ -362,7 +338,7 @@ ${profileBlock}
 ${cvDataBlock}
 
 ${formatJobContext(input.job)}
-Instructions: ${input.instructions}
+${isCv ? `Instructions: ${input.instructions}` : guidelines}
 ${photoNote}`,
       },
     ],
