@@ -1,5 +1,6 @@
 import type { ReactNode, FC } from "react";
 import type { CvDocument, UserProfile } from "@/types/documents";
+import { getContactPhone } from "@/lib/documents/profile";
 
 export interface CvTemplateProps {
   data: CvDocument;
@@ -19,11 +20,11 @@ function ContactBlock({
   light?: boolean;
 }) {
   const text = light ? "text-white/90" : "text-slate-600";
+  const contactPhone = getContactPhone(profile);
   return (
     <div className={`space-y-1 text-xs ${text} ${className}`}>
       {profile.email && <p>{profile.email}</p>}
-      {profile.phone && <p>{profile.phone}</p>}
-      {profile.mobile && <p>{profile.mobile}</p>}
+      {contactPhone && <p>{contactPhone}</p>}
       {profile.location && <p>{profile.location}</p>}
       {profile.languages && <p>{profile.languages}</p>}
       {profile.linkedinUrl && <p className="truncate">{profile.linkedinUrl}</p>}
@@ -151,7 +152,7 @@ function CvMinimal({ data, profile, photoUrl, jobTitle }: CvTemplateProps) {
         <div>
           <h1 className="text-3xl font-light tracking-tight">{profile.fullName || "Your Name"}</h1>
           <p className="text-sm uppercase tracking-[0.2em]">{profile.targetRole || jobTitle}</p>
-          <p className="mt-2 text-xs">{[profile.email, profile.phone, profile.location].filter(Boolean).join(" · ")}</p>
+          <p className="mt-2 text-xs">{[profile.email, getContactPhone(profile), profile.location].filter(Boolean).join(" · ")}</p>
         </div>
       </div>
       <p className="mb-6 text-sm leading-relaxed">{data.summary}</p>
@@ -208,7 +209,7 @@ function CvExecutive({ data, profile, photoUrl, jobTitle }: CvTemplateProps) {
           <div>
             <h1 className="text-2xl font-semibold">{profile.fullName || "Your Name"}</h1>
             <p className="text-amber-400">{profile.targetRole || jobTitle}</p>
-            <p className="mt-1 text-xs text-slate-400">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+            <p className="mt-1 text-xs text-slate-400">{[profile.email, getContactPhone(profile)].filter(Boolean).join(" · ")}</p>
           </div>
         </div>
       </header>
@@ -283,7 +284,7 @@ function CvCompact({ data, profile, photoUrl, jobTitle }: CvTemplateProps) {
         <div>
           <h1 className="text-lg font-bold">{profile.fullName || "Your Name"}</h1>
           <p>{profile.targetRole || jobTitle} · {profile.location}</p>
-          <p className="text-slate-500">{profile.email} · {profile.phone} · {profile.mobile}</p>
+          <p className="text-slate-500">{[profile.email, getContactPhone(profile)].filter(Boolean).join(" · ")}</p>
         </div>
         <Photo url={photoUrl} name={profile.fullName} className="h-14 w-14" />
       </div>

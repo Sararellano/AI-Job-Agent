@@ -2,17 +2,25 @@ import type { UserProfile } from "@/types/documents";
 import type { UserDocumentSettings } from "@/types/database";
 import { EMPTY_PROFILE } from "@/types/documents";
 
+/** Primary phone line for documents — mobile only, with legacy phone fallback. */
+export function getContactPhone(profile: UserProfile): string {
+  return profile.mobile || profile.phone;
+}
+
 export function settingsToProfile(
   settings: Partial<UserDocumentSettings> | null | undefined
 ): UserProfile {
   if (!settings) return { ...EMPTY_PROFILE };
 
+  const legacyPhone = settings.phone ?? "";
+  const mobile = settings.mobile?.trim() ? settings.mobile : legacyPhone;
+
   return {
     fullName: settings.full_name ?? "",
     targetRole: settings.target_role ?? "",
     email: settings.email ?? "",
-    phone: settings.phone ?? "",
-    mobile: settings.mobile ?? "",
+    phone: "",
+    mobile,
     languages: settings.languages ?? "",
     location: settings.location ?? "",
     linkedinUrl: settings.linkedin_url ?? "",
@@ -29,7 +37,7 @@ export function profileToDbFields(profile: UserProfile) {
     full_name: profile.fullName,
     target_role: profile.targetRole,
     email: profile.email,
-    phone: profile.phone,
+    phone: "",
     mobile: profile.mobile,
     languages: profile.languages,
     location: profile.location,
@@ -49,8 +57,8 @@ export function formatProfileForPrompt(profile: UserProfile): string {
   if (profile.fullName) lines.push(`Name: ${profile.fullName}`);
   if (profile.targetRole) lines.push(`Role: ${profile.targetRole}`);
   if (profile.email) lines.push(`Email: ${profile.email}`);
-  if (profile.phone) lines.push(`Phone: ${profile.phone}`);
-  if (profile.mobile) lines.push(`Mobile: ${profile.mobile}`);
+  const contactPhone = getContactPhone(profile);
+  if (contactPhone) lines.push(`Mobile: ${contactPhone}`);
   if (profile.languages) lines.push(`Languages: ${profile.languages}`);
   if (profile.location) lines.push(`Location: ${profile.location}`);
   if (profile.linkedinUrl) lines.push(`LinkedIn: ${profile.linkedinUrl}`);

@@ -1,13 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FileText,
   FolderOpen,
   LogOut,
+  Menu,
   PlusCircle,
   User,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -32,6 +35,18 @@ const NAV_ITEMS = [
 export function AppShell({ userEmail, children }: AppShellProps) {
   const t = useT();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -40,8 +55,24 @@ export function AppShell({ userEmail, children }: AppShellProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-background)]">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col border-r border-[var(--color-card-border)] bg-[var(--color-card)] shadow-[var(--shadow-card)]">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-[var(--color-background)]">
+      {menuOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      <aside
+        id="app-sidebar"
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-[var(--color-card-border)] bg-[var(--color-card)] shadow-[var(--shadow-card)] transition-transform duration-200 ease-in-out",
+          menuOpen ? "translate-x-0" : "-translate-x-full",
+          "md:translate-x-0"
+        )}
+      >
         <div className="border-b border-[var(--color-card-border)] p-4">
           <Link href="/profile" className="group flex flex-col gap-0.5 transition-opacity hover:opacity-90">
             <span className="flex items-center gap-2">
@@ -62,6 +93,7 @@ export function AppShell({ userEmail, children }: AppShellProps) {
               <Link
                 key={href}
                 href={href}
+                onClick={() => setMenuOpen(false)}
                 className={cn(
                   "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   active
@@ -92,11 +124,23 @@ export function AppShell({ userEmail, children }: AppShellProps) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col pl-56">
-        <header className="sticky top-0 z-20 flex justify-end border-b border-[var(--color-card-border)] bg-[color-mix(in_srgb,var(--color-background)_85%,white)] px-6 py-3 backdrop-blur-md">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-56">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[var(--color-card-border)] bg-[color-mix(in_srgb,var(--color-background)_85%,white)] px-4 py-3 backdrop-blur-md md:justify-end md:px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="app-sidebar"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
           <LanguageSwitch />
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

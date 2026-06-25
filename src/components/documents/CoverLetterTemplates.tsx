@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import type { CoverLetterDocument, UserProfile } from "@/types/documents";
+import { getContactPhone } from "@/lib/documents/profile";
 
 export interface CoverTemplateProps {
   data: CoverLetterDocument;
@@ -16,7 +17,7 @@ function CoverFormal({ data, profile, company, jobTitle }: CoverTemplateProps) {
       <div className="mb-8 text-sm text-slate-500">
         <p className="font-semibold text-slate-900">{profile.fullName}</p>
         <p>{profile.targetRole}</p>
-        <p>{profile.email} · {profile.phone}</p>
+        <p>{[profile.email, getContactPhone(profile)].filter(Boolean).join(" · ")}</p>
         <p>{profile.location}</p>
         <p className="mt-4">{data.date}</p>
       </div>
@@ -69,7 +70,7 @@ function CoverInformal({ data, profile, company }: CoverTemplateProps) {
         Cheers,<br />
         <span className="font-semibold">{profile.fullName || "Your Name"}</span>
       </p>
-      <p className="mt-2 text-xs text-stone-500">{profile.email} · {profile.mobile || profile.phone}</p>
+      <p className="mt-2 text-xs text-stone-500">{[profile.email, getContactPhone(profile)].filter(Boolean).join(" · ")}</p>
     </div>
   );
 }

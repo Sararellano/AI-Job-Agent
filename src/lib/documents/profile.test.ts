@@ -28,6 +28,17 @@ describe("settingsToProfile", () => {
       phone: "",
     });
   });
+
+  it("maps legacy phone into mobile when mobile is empty", () => {
+    const profile = settingsToProfile({
+      full_name: "Jane Doe",
+      phone: "+34 600 000 000",
+      mobile: "",
+    });
+
+    expect(profile.mobile).toBe("+34 600 000 000");
+    expect(profile.phone).toBe("");
+  });
 });
 
 describe("profileToDbFields", () => {

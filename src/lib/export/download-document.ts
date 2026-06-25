@@ -1,4 +1,5 @@
 import type { CvDocument, CoverLetterDocument, DocumentFormat, UserProfile } from "@/types/documents";
+import { getContactPhone } from "@/lib/documents/profile";
 import {
   Document,
   Packer,
@@ -10,10 +11,10 @@ import {
 import { saveAs } from "file-saver";
 
 function cvToPlainText(data: CvDocument, profile: UserProfile): string {
+  const contactPhone = getContactPhone(profile);
   const contact = [
     profile.email,
-    profile.phone,
-    profile.mobile,
+    contactPhone,
     profile.location,
     profile.linkedinUrl,
     profile.website,
@@ -51,7 +52,7 @@ function coverToPlainText(data: CoverLetterDocument, profile: UserProfile): stri
   return [
     profile.fullName,
     profile.email,
-    profile.phone,
+    getContactPhone(profile),
     "",
     data.date,
     "",
@@ -123,7 +124,7 @@ export async function downloadCvAsDocx(
     new Paragraph({
       children: [
         new TextRun({
-          text: [profile.email, profile.phone, profile.location].filter(Boolean).join(" · "),
+          text: [profile.email, getContactPhone(profile), profile.location].filter(Boolean).join(" · "),
           size: 20,
         }),
       ],

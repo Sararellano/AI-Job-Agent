@@ -57,15 +57,6 @@ export function UserProfileSection({ profile, onChange }: UserProfileSectionProp
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">{t("profile.phone")}</label>
-          <input
-            className={inputClass}
-            value={profile.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="+34 900 000 000"
-          />
-        </div>
-        <div>
           <label className="mb-1 block text-xs font-medium">{t("profile.mobile")}</label>
           <input
             className={inputClass}
