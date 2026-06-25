@@ -45,6 +45,8 @@ export function ProfileClient({
   const [coverTemplateDefault, setCoverTemplateDefault] = useState(defaultCoverTemplateId);
   const [showCvUpload, setShowCvUpload] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [extractMessage, setExtractMessage] = useState<string | null>(null);
+  const [profileSyncKey, setProfileSyncKey] = useState(0);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -103,9 +105,20 @@ export function ProfileClient({
           {showCvUpload ? (
             <CvUploadStep
               existingFileName={onboarding.cvFileName}
-              onUploaded={() => {
+              extractProfile
+              onUploaded={(data) => {
                 setShowCvUpload(false);
-                setShowQuestions(true);
+                if (data.profile) {
+                  setProfile(data.profile);
+                  if (data.cvInstructions) setCvDefaults(data.cvInstructions);
+                  if (data.coverInstructions) setCoverDefaults(data.coverInstructions);
+                  setProfileSyncKey((k) => k + 1);
+                  setExtractMessage(
+                    data.aiUsed
+                      ? t("profilePage.extractedAi")
+                      : t("profilePage.extractedHeuristic")
+                  );
+                }
               }}
             />
           ) : (
@@ -113,11 +126,15 @@ export function ProfileClient({
               {t("profilePage.updateCv")}
             </Button>
           )}
+          {extractMessage && (
+            <p className="mt-3 text-sm text-[var(--color-success)]">{extractMessage}</p>
+          )}
         </div>
       </ScrollReveal>
 
       <ScrollReveal delay={160}>
         <DefaultInstructionsSection
+          key={profileSyncKey}
           initialProfile={profile}
           initialCvInstructions={cvDefaults}
           initialCoverLetterInstructions={coverDefaults}

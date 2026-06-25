@@ -130,6 +130,8 @@ export const en = {
   "preview.hide": "Hide",
   "preview.download": "Download",
   "preview.downloading": "Downloading {format}…",
+  "preview.downloadFailed": "Download failed. Try again.",
+  "preview.notReady": "Preview is still loading. Wait a moment and try again.",
   "preview.template": "Template",
 
   "photo.upload": "Upload from computer",
@@ -145,6 +147,7 @@ export const en = {
   "onboarding.uploadClick": "Click to upload PDF or DOCX",
   "onboarding.uploaded": "Uploaded: {name}",
   "onboarding.parsing": "Parsing locally…",
+  "onboarding.parsingAi": "Analyzing CV with AI…",
   "onboarding.step2Title": "2. Review extraction",
   "onboarding.step2Subtitle": "Detected from your CV without AI. Optional: enhance with Groq or Gemini (1 call).",
   "onboarding.track": "Track",
@@ -225,7 +228,9 @@ export const en = {
   "profilePage.title": "Your tech profile",
   "profilePage.subtitle": "Contact details, AI defaults and CV — used to generate documents for programming applications.",
   "profilePage.updateCv": "Update CV",
-  "profilePage.updateCvHint": "Upload a new CV to refresh your profile and questions.",
+  "profilePage.updateCvHint": "Upload a PDF or DOCX. AI extracts contact, experience, education and skills into your shared profile.",
+  "profilePage.extractedAi": "Profile updated from your CV. Review the fields below and save.",
+  "profilePage.extractedHeuristic": "Basic data extracted from your CV. Review and save; add GROQ_API_KEY or GEMINI_API_KEY for full AI analysis.",
   "profilePage.skillsTitle": "Confirmed skills ({count})",
   "profilePage.reanswer": "Review questions",
 

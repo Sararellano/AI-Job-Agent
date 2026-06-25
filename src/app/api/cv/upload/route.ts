@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractTextFromCv } from "@/lib/cv/extract-text";
 import { parseCvHeuristics } from "@/lib/cv/parse-heuristics";
+import { extractAndApplyCvProfile } from "@/lib/cv/apply-extraction";
+import { settingsToProfile } from "@/lib/documents/profile";
 import { buildSkillProfileFromCv } from "@/lib/skills/question-engine";
 import {
   isAllowedCvUpload,
@@ -24,6 +26,7 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
+  const extractProfile = formData.get("extractProfile") === "true";
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -63,6 +66,12 @@ export async function POST(request: Request) {
   const parsed = parseCvHeuristics(rawText);
   const skillProfile = buildSkillProfileFromCv(parsed);
 
+  const { data: existingSettings } = await supabase
+    .from("user_document_settings")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "pdf";
   const storagePath = `${user.id}/cv-${Date.now()}.${ext}`;
 
@@ -90,9 +99,8 @@ export async function POST(request: Request) {
         cv_parsed_structured: parsed,
         primary_track: parsed.primaryTrack,
         skill_profile: skillProfile,
-        onboarding_step: 1,
-        onboarding_completed: false,
-        ai_cv_analysis: null,
+        onboarding_step: existingSettings?.onboarding_completed ? 4 : 1,
+        onboarding_completed: existingSettings?.onboarding_completed ?? false,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" }
@@ -104,11 +112,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (parsed.emails[0]) {
-    await supabase
-      .from("user_document_settings")
-      .update({ email: parsed.emails[0] })
-      .eq("user_id", user.id);
+  if (extractProfile) {
+    try {
+      const applied = await extractAndApplyCvProfile(
+        supabase,
+        user.id,
+        rawText,
+        parsed,
+        settingsToProfile(existingSettings)
+      );
+
+      return NextResponse.json({
+        parsed: applied.parsed,
+        skillProfile: applied.skillProfile,
+        cvFileName: file.name,
+        settings: data,
+        profile: applied.profile,
+        cvInstructions: applied.cvInstructions,
+        coverInstructions: applied.coverInstructions,
+        extraction: applied.extraction,
+        aiUsed: applied.ai !== null,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to extract profile";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({

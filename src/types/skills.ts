@@ -47,6 +47,15 @@ export interface AiCvAnalysis {
   questionSeeds: string[];
   imposterNote?: string;
   analyzedAt: string;
+  profileExtraction?: CvProfileExtraction;
+}
+
+export interface CvProfileExtraction {
+  profile: import("@/types/documents").UserProfile;
+  summary: string;
+  experience: import("@/types/documents").CvExperience[];
+  education: string;
+  skills: string[];
 }
 
 export interface DiscoveryQuestion {

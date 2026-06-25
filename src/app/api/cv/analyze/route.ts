@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  analyzeCvWithAi,
-  mergeAiIntoParsedSignals,
-} from "@/lib/ai/parse-cv-ai";
-import { buildSkillProfileFromCv } from "@/lib/skills/question-engine";
+import { extractAndApplyCvProfile } from "@/lib/cv/apply-extraction";
+import { settingsToProfile } from "@/lib/documents/profile";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import type { ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import type { ParsedCvLocal } from "@/types/skills";
 
 const AI_RATE_LIMIT = 5;
 const AI_RATE_WINDOW_MS = 60_000;
@@ -49,62 +46,30 @@ export async function POST() {
     );
   }
 
-  const ai = await analyzeCvWithAi(settings.cv_parsed_raw);
-
-  if (!ai) {
-    return NextResponse.json(
-      {
-        error: "No AI provider configured",
-        hint: "Add GROQ_API_KEY or GEMINI_API_KEY to .env.local (optional)",
-      },
-      { status: 503 }
-    );
-  }
-
   const parsed = settings.cv_parsed_structured as ParsedCvLocal;
-  const mergedParsed: ParsedCvLocal = {
-    ...parsed,
-    primaryTrack: ai.primaryTrack || parsed.primaryTrack,
-    secondaryTracks: [
-      ...new Set([...ai.secondaryTracks, ...parsed.secondaryTracks]),
-    ],
-    yearsExperienceEstimate:
-      ai.yearsExperience ?? parsed.yearsExperienceEstimate,
-    detectedSkills: [
-      ...new Set([...parsed.detectedSkills, ...ai.claimedSkills]),
-    ],
-    skillConfidence: { ...parsed.skillConfidence, ...ai.skillConfidence },
-    signals: mergeAiIntoParsedSignals(parsed.signals, ai),
-  };
 
-  const skillProfile: SkillEvidence[] = buildSkillProfileFromCv(mergedParsed);
-  for (const name of ai.claimedSkills) {
-    if (!skillProfile.find((s) => s.name === name)) {
-      skillProfile.push({
-        name,
-        level: "touched",
-        sources: ["ai"],
-        confidence: ai.skillConfidence[name] ?? "medium",
-      });
-    }
+  try {
+    const applied = await extractAndApplyCvProfile(
+      supabase,
+      user.id,
+      settings.cv_parsed_raw,
+      parsed,
+      settingsToProfile(settings)
+    );
+
+    return NextResponse.json({
+      ai: applied.ai,
+      parsed: applied.parsed,
+      skillProfile: applied.skillProfile,
+      profile: applied.profile,
+      cvInstructions: applied.cvInstructions,
+      coverInstructions: applied.coverInstructions,
+      extraction: applied.extraction,
+      aiUsed: applied.ai !== null,
+      settings,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Analysis failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from("user_document_settings")
-    .update({
-      cv_parsed_structured: mergedParsed,
-      primary_track: mergedParsed.primaryTrack,
-      skill_profile: skillProfile,
-      ai_cv_analysis: ai,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", user.id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ai, parsed: mergedParsed, skillProfile, settings: data });
 }

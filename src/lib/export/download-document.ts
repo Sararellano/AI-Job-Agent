@@ -9,6 +9,7 @@ import {
   AlignmentType,
 } from "docx";
 import { saveAs } from "file-saver";
+import { prepareHtml2CanvasClone, inlineExportStyles } from "@/lib/export/html2canvas-compat";
 
 function cvToPlainText(data: CvDocument, profile: UserProfile): string {
   const contactPhone = getContactPhone(profile);
@@ -81,34 +82,51 @@ export async function downloadAsPdf(
     import("jspdf"),
   ]);
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    logging: false,
-  });
+  const exportRoot = element.cloneNode(true) as HTMLElement;
+  exportRoot.setAttribute("data-pdf-export", "true");
+  exportRoot.style.position = "fixed";
+  exportRoot.style.left = "-10000px";
+  exportRoot.style.top = "0";
+  exportRoot.style.zIndex = "-1";
+  document.body.appendChild(exportRoot);
 
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  try {
+    inlineExportStyles(element, exportRoot);
 
-  let heightLeft = imgHeight;
-  let position = 0;
+    const canvas = await html2canvas(exportRoot, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      onclone: (clonedDocument, clonedElement) => {
+        prepareHtml2CanvasClone(clonedDocument, exportRoot, clonedElement);
+      },
+    });
 
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight;
-    pdf.addPage();
+    let heightLeft = imgHeight;
+    let position = 0;
+
     pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
-  }
 
-  pdf.save(`${filename}.pdf`);
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(`${filename}.pdf`);
+  } finally {
+    exportRoot.remove();
+  }
 }
 
 export async function downloadCvAsDocx(

@@ -101,18 +101,25 @@ export function WorkspaceDocumentPanel({
   async function handleDownload(format: DocumentFormat) {
     setDownloading(format);
     setShowFormats(false);
+    setMessage(null);
     try {
       const safeName = buildDocumentFilename(type, profile, company);
+      const previewElement = await waitForPreviewElement(() => previewRef.current);
       await downloadDocument(
         format,
         type,
         data as CvDocument & CoverLetterDocument,
         profile,
-        previewRef.current,
+        previewElement,
         safeName
       );
     } catch (err) {
       console.error(err);
+      setMessage(
+        err instanceof Error && err.message === "Preview not ready"
+          ? t("preview.notReady")
+          : t("preview.downloadFailed")
+      );
     } finally {
       setDownloading(null);
     }
@@ -215,39 +222,58 @@ export function WorkspaceDocumentPanel({
       )}
 
       <div className="flex-1 overflow-auto p-4">
-        {editing ? (
+        {editing && (
           <DocumentEditor
             type={type}
             data={data}
             onChange={(d) => setData(d as typeof data)}
           />
-        ) : (
-          <div className="overflow-auto bg-slate-200/50 p-4">
-            <div
-              ref={previewRef}
-              className="mx-auto max-w-[210mm] shadow-lg ring-1 ring-slate-200"
-            >
-              {type === "cv" ? (
-                <CvTemplateRenderer
-                  data={data as CvDocument}
-                  profile={profile}
-                  photoUrl={photoUrl}
-                  jobTitle={jobTitle}
-                  company={company}
-                />
-              ) : (
-                <CoverLetterTemplateRenderer
-                  data={data as CoverLetterDocument}
-                  profile={profile}
-                  photoUrl={photoUrl}
-                  company={company}
-                  jobTitle={jobTitle}
-                />
-              )}
-            </div>
-          </div>
         )}
+
+        <div
+          className={cn(
+            "overflow-auto bg-slate-200/50 p-4",
+            editing &&
+              "pointer-events-none fixed top-0 -left-[10000px] w-[210mm]"
+          )}
+          aria-hidden={editing}
+        >
+          <div
+            ref={previewRef}
+            className="mx-auto max-w-[210mm] shadow-lg ring-1 ring-slate-200"
+          >
+            {type === "cv" ? (
+              <CvTemplateRenderer
+                data={data as CvDocument}
+                profile={profile}
+                photoUrl={photoUrl}
+                jobTitle={jobTitle}
+                company={company}
+              />
+            ) : (
+              <CoverLetterTemplateRenderer
+                data={data as CoverLetterDocument}
+                profile={profile}
+                photoUrl={photoUrl}
+                company={company}
+                jobTitle={jobTitle}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
+}
+
+async function waitForPreviewElement(
+  getElement: () => HTMLDivElement | null,
+  attempts = 12
+): Promise<HTMLDivElement> {
+  for (let i = 0; i < attempts; i++) {
+    const element = getElement();
+    if (element) return element;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+  throw new Error("Preview not ready");
 }

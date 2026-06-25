@@ -132,6 +132,8 @@ export const es: Record<EnKeys, string> = {
   "preview.hide": "Ocultar",
   "preview.download": "Descargar",
   "preview.downloading": "Descargando {format}…",
+  "preview.downloadFailed": "Error al descargar. Inténtalo de nuevo.",
+  "preview.notReady": "La vista previa aún se está cargando. Espera un momento e inténtalo otra vez.",
   "preview.template": "Plantilla",
 
   "photo.upload": "Subir desde el ordenador",
@@ -147,6 +149,7 @@ export const es: Record<EnKeys, string> = {
   "onboarding.uploadClick": "Haz clic para subir PDF o DOCX",
   "onboarding.uploaded": "Subido: {name}",
   "onboarding.parsing": "Analizando localmente…",
+  "onboarding.parsingAi": "Analizando CV con IA…",
   "onboarding.step2Title": "2. Revisa la extracción",
   "onboarding.step2Subtitle": "Detectado sin IA. Opcional: mejora con Groq o Gemini (1 llamada).",
   "onboarding.track": "Área",
@@ -227,7 +230,9 @@ export const es: Record<EnKeys, string> = {
   "profilePage.title": "Tu perfil tech",
   "profilePage.subtitle": "Contacto, defaults de IA y CV — usados para generar documentos en candidaturas de programación.",
   "profilePage.updateCv": "Actualizar CV",
-  "profilePage.updateCvHint": "Sube un CV nuevo para actualizar tu perfil y preguntas.",
+  "profilePage.updateCvHint": "Sube un PDF o DOCX. La IA extrae contacto, experiencia, estudios y habilidades al perfil compartido.",
+  "profilePage.extractedAi": "Perfil actualizado desde tu CV. Revisa los campos y guarda los cambios.",
+  "profilePage.extractedHeuristic": "Datos básicos extraídos del CV. Revisa y guarda; añade GROQ_API_KEY o GEMINI_API_KEY para análisis completo con IA.",
   "profilePage.skillsTitle": "Habilidades confirmadas ({count})",
   "profilePage.reanswer": "Revisar preguntas",
 

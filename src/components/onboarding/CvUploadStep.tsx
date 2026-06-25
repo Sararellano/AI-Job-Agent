@@ -2,23 +2,34 @@
 
 import { useRef, useState } from "react";
 import { Upload, FileText, Loader2 } from "lucide-react";
-import type { ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import type { CvProfileExtraction, ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import type { UserProfile } from "@/types/documents";
 import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
 interface CvUploadStepProps {
   existingFileName?: string | null;
+  extractProfile?: boolean;
   onUploaded: (data: {
     parsed: ParsedCvLocal;
     skillProfile: SkillEvidence[];
     cvFileName: string;
+    profile?: UserProfile;
+    cvInstructions?: string;
+    coverInstructions?: string;
+    extraction?: CvProfileExtraction;
+    aiUsed?: boolean;
   }) => void;
 }
 
 /**
  * Step 1: Upload CV (PDF/DOCX) and run local parser.
  */
-export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps) {
+export function CvUploadStep({
+  existingFileName,
+  extractProfile = false,
+  onUploaded,
+}: CvUploadStepProps) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -31,6 +42,9 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
 
     const formData = new FormData();
     formData.append("file", file);
+    if (extractProfile) {
+      formData.append("extractProfile", "true");
+    }
 
     const res = await fetch("/api/cv/upload", {
       method: "POST",
@@ -49,6 +63,11 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
       parsed: ParsedCvLocal;
       skillProfile: SkillEvidence[];
       cvFileName: string;
+      profile?: UserProfile;
+      cvInstructions?: string;
+      coverInstructions?: string;
+      extraction?: CvProfileExtraction;
+      aiUsed?: boolean;
     };
 
     setFileName(data.cvFileName);
@@ -91,7 +110,9 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
         )}
         <span className="text-sm font-medium">
           {uploading
-            ? t("onboarding.parsing")
+            ? extractProfile
+              ? t("onboarding.parsingAi")
+              : t("onboarding.parsing")
             : fileName
               ? t("onboarding.uploaded", { name: fileName })
               : t("onboarding.uploadClick")}

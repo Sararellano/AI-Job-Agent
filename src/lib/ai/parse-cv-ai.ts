@@ -1,4 +1,6 @@
-import type { AiCvAnalysis, CareerTrack, SkillConfidence } from "@/types/skills";
+import type { AiCvAnalysis, CareerTrack, CvProfileExtraction, SkillConfidence } from "@/types/skills";
+import type { CvExperience, UserProfile } from "@/types/documents";
+import { EMPTY_PROFILE } from "@/types/documents";
 import { truncateCvText } from "@/lib/cv/extract-text";
 
 const ANALYSIS_SCHEMA = `{
@@ -8,7 +10,25 @@ const ANALYSIS_SCHEMA = `{
   "claimedSkills": ["string"],
   "skillConfidence": {"SkillName": "low|medium|high"},
   "questionSeeds": ["short keywords from CV for follow-up questions"],
-  "imposterNote": "one sentence reassuring note about transferable skills"
+  "imposterNote": "one sentence reassuring note about transferable skills",
+  "profile": {
+    "fullName": "string",
+    "targetRole": "string",
+    "email": "string",
+    "mobile": "string",
+    "languages": "string",
+    "location": "string",
+    "linkedinUrl": "string",
+    "website": "string",
+    "githubUrl": "string",
+    "extraLink": "string",
+    "salaryRange": "string",
+    "additionalInfo": "education and other notes"
+  },
+  "summary": "professional summary paragraph",
+  "experience": [{"role":"string","company":"string","period":"dates","highlights":["bullet"]}],
+  "education": "education section text",
+  "skills": ["string"]
 }`;
 
 /**
@@ -42,8 +62,11 @@ export async function analyzeCvWithAi(
 }
 
 function buildPrompt(rawText: string): string {
-  const excerpt = truncateCvText(rawText).slice(0, 6000);
-  return `Analyze this CV and return ONLY valid JSON matching this schema (no markdown):
+  const excerpt = truncateCvText(rawText).slice(0, 8000);
+  return `Analyze this CV and return ONLY valid JSON matching this schema (no markdown).
+Extract ALL contact details, work experience with dates, education, skills and summary from the CV text.
+Use empty strings for missing profile fields. experience.highlights should list key achievements per role.
+
 ${ANALYSIS_SCHEMA}
 
 CV text:
@@ -153,7 +176,57 @@ function normalizeAiResult(
     imposterNote:
       typeof raw.imposterNote === "string" ? raw.imposterNote : undefined,
     analyzedAt: new Date().toISOString(),
+    profileExtraction: normalizeProfileExtraction(raw),
   };
+}
+
+function normalizeProfileExtraction(
+  raw: Record<string, unknown>
+): CvProfileExtraction {
+  const profileRaw = (raw.profile ?? {}) as Record<string, unknown>;
+
+  const profile: UserProfile = {
+    fullName: str(profileRaw.fullName),
+    targetRole: str(profileRaw.targetRole),
+    email: str(profileRaw.email),
+    phone: "",
+    mobile: str(profileRaw.mobile),
+    languages: str(profileRaw.languages),
+    location: str(profileRaw.location),
+    linkedinUrl: str(profileRaw.linkedinUrl),
+    website: str(profileRaw.website),
+    githubUrl: str(profileRaw.githubUrl),
+    extraLink: str(profileRaw.extraLink),
+    salaryRange: str(profileRaw.salaryRange),
+    additionalInfo: str(profileRaw.additionalInfo) || str(raw.education),
+  };
+
+  const experience: CvExperience[] = Array.isArray(raw.experience)
+    ? (raw.experience as Record<string, unknown>[]).map((exp) => ({
+        role: str(exp.role),
+        company: str(exp.company),
+        period: str(exp.period),
+        highlights: Array.isArray(exp.highlights)
+          ? (exp.highlights as unknown[]).map((h) => str(h)).filter(Boolean)
+          : [],
+      }))
+    : [];
+
+  const skills = Array.isArray(raw.skills)
+    ? (raw.skills as unknown[]).map((s) => str(s)).filter(Boolean)
+    : [];
+
+  return {
+    profile: { ...EMPTY_PROFILE, ...profile },
+    summary: str(raw.summary),
+    experience,
+    education: str(raw.education),
+    skills,
+  };
+}
+
+function str(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 /**
