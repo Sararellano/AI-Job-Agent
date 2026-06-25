@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import { cn } from "@/lib/utils";
 import { useT } from "@/contexts/LocaleProvider";
+import { Button } from "@/components/ui/Button";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
 import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
 import type { UserProfile } from "@/types/documents";
@@ -98,7 +100,7 @@ export function DefaultInstructionsSection({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+    <section className="surface-card p-6">
       <h2 className="mb-1 text-lg font-semibold">{t("defaults.title")}</h2>
       <p className="mb-5 text-sm text-[var(--color-muted)]">
         {t("defaults.subtitle")}
@@ -114,7 +116,7 @@ export function DefaultInstructionsSection({
           <select
             value={cvTemplateId}
             onChange={(e) => setCvTemplateId(e.target.value)}
-            className="mb-2 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+            className={cn("mb-2", inputClassName)}
           >
             {CV_TEMPLATES.map((t) => (
               <option key={t.id} value={t.id}>
@@ -128,7 +130,7 @@ export function DefaultInstructionsSection({
             value={cvInstructions}
             onChange={(e) => setCvInstructions(e.target.value)}
             placeholder="e.g. Professional layout, highlight React experience..."
-            className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            className={textareaClassName}
           />
           <PhotoUploadField
             label={t("defaults.cvPhoto")}
@@ -145,7 +147,7 @@ export function DefaultInstructionsSection({
           <select
             value={coverTemplateId}
             onChange={(e) => setCoverTemplateId(e.target.value)}
-            className="mb-2 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+            className={cn("mb-2", inputClassName)}
           >
             {COVER_LETTER_TEMPLATES.map((t) => (
               <option key={t.id} value={t.id}>
@@ -159,7 +161,7 @@ export function DefaultInstructionsSection({
             value={coverLetterInstructions}
             onChange={(e) => setCoverLetterInstructions(e.target.value)}
             placeholder="e.g. One page, formal tone..."
-            className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            className={textareaClassName}
           />
           <PhotoUploadField
             label={t("defaults.coverPhoto")}
@@ -172,17 +174,9 @@ export function DefaultInstructionsSection({
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className={cn(
-            "rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-accent-hover)]",
-            saving && "opacity-60"
-          )}
-        >
+        <Button type="button" onClick={handleSave} disabled={saving}>
           {saving ? t("defaults.saving") : t("defaults.save")}
-        </button>
+        </Button>
         {message && (
           <span className="text-sm text-[var(--color-muted)]">{message}</span>
         )}

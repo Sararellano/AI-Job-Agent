@@ -12,8 +12,11 @@ import { CV_TEMPLATES, COVER_LETTER_TEMPLATES } from "@/types/documents";
 import { CvTemplateRenderer } from "@/components/documents/CvTemplates";
 import { CoverLetterTemplateRenderer } from "@/components/documents/CoverLetterTemplates";
 import { DocumentEditor } from "@/components/applications/DocumentEditor";
+import { Button } from "@/components/ui/Button";
+import { buildDocumentFilename } from "@/lib/export/document-filename";
 import { downloadDocument } from "@/lib/export/download-document";
 import { useT } from "@/contexts/LocaleProvider";
+import { inputClassName } from "@/lib/ui/input-styles";
 import { cn } from "@/lib/utils";
 import type { JobApplication } from "@/types/database";
 
@@ -99,9 +102,7 @@ export function WorkspaceDocumentPanel({
     setDownloading(format);
     setShowFormats(false);
     try {
-      const safeName = `${type}-${company}-${jobTitle}`
-        .replace(/[^a-z0-9-_]/gi, "_")
-        .slice(0, 60);
+      const safeName = buildDocumentFilename(type, profile, company);
       await downloadDocument(
         format,
         type,
@@ -118,7 +119,7 @@ export function WorkspaceDocumentPanel({
   }
 
   return (
-    <div className="flex flex-col rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] overflow-hidden">
+    <div className="surface-card flex flex-col overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-card-border)] p-3">
         <h3 className="text-sm font-semibold">
           {type === "cv" ? t("workspace.cvSection") : t("workspace.coverSection")}
@@ -127,7 +128,7 @@ export function WorkspaceDocumentPanel({
           <select
             value={templateId}
             onChange={(e) => handleTemplateChange(e.target.value)}
-            className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-2 py-1.5 text-xs outline-none"
+            className={cn("rounded-lg px-2 py-1.5 text-xs", inputClassName)}
             aria-label={t("preview.template")}
           >
             {templates.map((tmpl) => (
@@ -137,11 +138,12 @@ export function WorkspaceDocumentPanel({
             ))}
           </select>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => (editing ? handleSave() : setEditing(true))}
             disabled={saving}
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--color-accent)]"
           >
             {editing ? (
               <>
@@ -154,29 +156,30 @@ export function WorkspaceDocumentPanel({
                 {t("workspace.edit")}
               </>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => handleDownload("pdf")}
             disabled={!!downloading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
             <Download className="h-3.5 w-3.5" />
             {downloading === "pdf"
               ? t("preview.downloading", { format: "PDF" })
               : t("workspace.downloadPdf")}
-          </button>
+          </Button>
 
           <div className="relative">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setShowFormats(!showFormats)}
-              className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-card-border)] px-2 py-1.5 text-xs"
             >
               {t("workspace.moreFormats")}
               <ChevronDown className="h-3 w-3" />
-            </button>
+            </Button>
             {showFormats && (
               <div className="absolute right-0 z-10 mt-1 min-w-[100px] rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] py-1 shadow-lg">
                 {(["docx", "txt"] as DocumentFormat[]).map((fmt) => (
@@ -193,13 +196,15 @@ export function WorkspaceDocumentPanel({
             )}
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onRegenerate}
-            className="text-xs text-[var(--color-accent)] hover:underline"
+            className="text-[var(--color-accent)] hover:bg-transparent"
           >
             {t("workspace.regenerate")}
-          </button>
+          </Button>
         </div>
       </div>
 

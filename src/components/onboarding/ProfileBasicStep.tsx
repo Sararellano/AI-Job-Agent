@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { UserProfile } from "@/types/documents";
+import { Button } from "@/components/ui/Button";
 import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
 import { useT } from "@/contexts/LocaleProvider";
 
@@ -44,10 +45,7 @@ export function ProfileBasicStep({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6"
-    >
+    <form onSubmit={handleSubmit} className="surface-card p-6">
       <h2 className="mb-1 text-lg font-semibold">
         {t("onboarding.profileStepTitle")}
       </h2>
@@ -61,13 +59,9 @@ export function ProfileBasicStep({
         <p className="mb-3 text-sm text-[var(--color-danger)]">{error}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="w-full rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium disabled:opacity-50"
-      >
+      <Button type="submit" disabled={saving} className="w-full">
         {saving ? t("defaults.saving") : t("onboarding.profileSave")}
-      </button>
+      </Button>
     </form>
   );
 }

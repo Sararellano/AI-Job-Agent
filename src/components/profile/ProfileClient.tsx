@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { UserProfile } from "@/types/documents";
 import type { OnboardingState } from "@/types/skills";
 import { DefaultInstructionsSection } from "@/components/dashboard/DefaultInstructionsSection";
@@ -46,90 +48,94 @@ export function ProfileClient({
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-bold">{t("profilePage.title")}</h1>
-        <p className="text-sm text-[var(--color-muted)]">{t("profilePage.subtitle")}</p>
-        <Link
-          href="/jobs/new"
-          className="mt-4 inline-block rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-white"
-        >
-          {t("applications.newCta")}
-        </Link>
-      </header>
+      <ScrollReveal>
+        <header>
+          <h1 className="text-2xl font-bold">{t("profilePage.title")}</h1>
+          <p className="text-sm text-[var(--color-muted)]">{t("profilePage.subtitle")}</p>
+          <ButtonLink href="/jobs/new" className="mt-4">
+            {t("applications.newCta")}
+          </ButtonLink>
+        </header>
+      </ScrollReveal>
 
       {onboarding.skillProfile.length > 0 && (
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-4">
-          <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
-            {t("profilePage.skillsTitle", {
-              count: String(onboarding.skillProfile.length),
-            })}
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {onboarding.skillProfile.slice(0, 20).map((s) => (
-              <span
-                key={s.name}
-                className="rounded-full bg-[var(--color-background)] px-2 py-0.5 text-xs"
-              >
-                {s.name}
-              </span>
-            ))}
+        <ScrollReveal delay={80}>
+          <div className="surface-card p-4">
+            <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
+              {t("profilePage.skillsTitle", {
+                count: String(onboarding.skillProfile.length),
+              })}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {onboarding.skillProfile.slice(0, 20).map((s) => (
+                <span
+                  key={s.name}
+                  className="rounded-full bg-[var(--color-background)] px-2 py-0.5 text-xs"
+                >
+                  {s.name}
+                </span>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowQuestions((v) => !v)}
+              className="mt-3 px-0 text-[var(--color-accent)] hover:bg-transparent"
+            >
+              {t("profilePage.reanswer")}
+            </Button>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowQuestions((v) => !v)}
-            className="mt-3 text-xs text-[var(--color-accent)] hover:underline"
-          >
-            {t("profilePage.reanswer")}
-          </button>
-        </div>
+        </ScrollReveal>
       )}
 
       {showQuestions && (
-        <CvQuestionsWizard onComplete={() => setShowQuestions(false)} />
+        <ScrollReveal>
+          <CvQuestionsWizard onComplete={() => setShowQuestions(false)} />
+        </ScrollReveal>
       )}
 
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-5">
-        <h2 className="mb-1 text-sm font-semibold">{t("profilePage.updateCv")}</h2>
-        <p className="mb-4 text-xs text-[var(--color-muted)]">
-          {t("profilePage.updateCvHint")}
-        </p>
-        {showCvUpload ? (
-          <CvUploadStep
-            existingFileName={onboarding.cvFileName}
-            onUploaded={() => {
-              setShowCvUpload(false);
-              setShowQuestions(true);
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowCvUpload(true)}
-            className="rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm hover:border-[var(--color-accent)]"
-          >
-            {t("profilePage.updateCv")}
-          </button>
-        )}
-      </div>
+      <ScrollReveal delay={120}>
+        <div className="surface-card p-5">
+          <h2 className="mb-1 text-sm font-semibold">{t("profilePage.updateCv")}</h2>
+          <p className="mb-4 text-xs text-[var(--color-muted)]">
+            {t("profilePage.updateCvHint")}
+          </p>
+          {showCvUpload ? (
+            <CvUploadStep
+              existingFileName={onboarding.cvFileName}
+              onUploaded={() => {
+                setShowCvUpload(false);
+                setShowQuestions(true);
+              }}
+            />
+          ) : (
+            <Button variant="outline" onClick={() => setShowCvUpload(true)}>
+              {t("profilePage.updateCv")}
+            </Button>
+          )}
+        </div>
+      </ScrollReveal>
 
-      <DefaultInstructionsSection
-        initialProfile={profile}
-        initialCvInstructions={cvDefaults}
-        initialCoverLetterInstructions={coverDefaults}
-        initialCvPhotoUrl={cvPhotoDefault}
-        initialCoverLetterPhotoUrl={coverPhotoDefault}
-        initialCvTemplateId={cvTemplateDefault}
-        initialCoverTemplateId={coverTemplateDefault}
-        onSaved={(data) => {
-          setProfile(data.profile);
-          setCvDefaults(data.cv);
-          setCoverDefaults(data.cover);
-          setCvPhotoDefault(data.cvPhoto);
-          setCoverPhotoDefault(data.coverPhoto);
-          setCvTemplateDefault(data.cvTemplateId);
-          setCoverTemplateDefault(data.coverTemplateId);
-        }}
-      />
+      <ScrollReveal delay={160}>
+        <DefaultInstructionsSection
+          initialProfile={profile}
+          initialCvInstructions={cvDefaults}
+          initialCoverLetterInstructions={coverDefaults}
+          initialCvPhotoUrl={cvPhotoDefault}
+          initialCoverLetterPhotoUrl={coverPhotoDefault}
+          initialCvTemplateId={cvTemplateDefault}
+          initialCoverTemplateId={coverTemplateDefault}
+          onSaved={(data) => {
+            setProfile(data.profile);
+            setCvDefaults(data.cv);
+            setCoverDefaults(data.cover);
+            setCvPhotoDefault(data.cvPhoto);
+            setCoverPhotoDefault(data.coverPhoto);
+            setCvTemplateDefault(data.cvTemplateId);
+            setCoverTemplateDefault(data.coverTemplateId);
+          }}
+        />
+      </ScrollReveal>
 
       <Link
         href="/onboarding"

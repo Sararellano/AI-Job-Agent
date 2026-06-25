@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import type { AiCvAnalysis, ParsedCvLocal, SkillEvidence } from "@/types/skills";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +57,7 @@ export function ParseReviewStep({
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+    <div className="surface-card p-6">
       <h2 className="mb-1 text-lg font-semibold">{t("onboarding.step2Title")}</h2>
       <p className="mb-4 text-sm text-[var(--color-muted)]">
         {t("onboarding.step2Subtitle")}
@@ -87,10 +88,10 @@ export function ParseReviewStep({
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-xs",
                   s.confidence === "high"
-                    ? "bg-green-500/20 text-green-400"
+                    ? "bg-green-100 text-green-700"
                     : s.confidence === "medium"
-                      ? "bg-amber-500/20 text-amber-400"
-                      : "bg-slate-500/20 text-slate-400"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-600"
                 )}
                 title={`${s.level} · ${s.confidence}`}
               >
@@ -108,27 +109,20 @@ export function ParseReviewStep({
       )}
 
       {aiAnalysis?.imposterNote && (
-        <p className="mb-4 rounded-lg bg-indigo-500/10 p-3 text-sm text-indigo-300">
+        <p className="mb-4 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_10%,white)] p-3 text-sm text-[var(--color-accent-hover)]">
           {aiAnalysis.imposterNote}
         </p>
       )}
 
       <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={onContinue}
-          className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-accent-hover)]"
-        >
+        <Button type="button" onClick={onContinue}>
           {t("onboarding.continueQuestions")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
           onClick={handleAiAnalyze}
           disabled={aiLoading}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm hover:border-[var(--color-accent)]",
-            aiLoading && "opacity-60"
-          )}
         >
           {aiLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -136,7 +130,7 @@ export function ParseReviewStep({
             <Sparkles className="h-4 w-4" />
           )}
           {t("onboarding.enhanceAi")}
-        </button>
+        </Button>
       </div>
 
       {aiError && (

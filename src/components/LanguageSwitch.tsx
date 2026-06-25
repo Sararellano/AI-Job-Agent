@@ -30,10 +30,10 @@ export function LanguageSwitch({ className }: LanguageSwitchProps) {
           type="button"
           onClick={() => select(code)}
           className={cn(
-            "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+            "rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-200 hover:-translate-y-px active:scale-[0.98]",
             locale === code
-              ? "bg-[var(--color-accent)] text-white"
-              : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+              ? "bg-[var(--color-accent)] text-white shadow-sm"
+              : "text-[var(--color-muted)] hover:bg-[var(--color-background)] hover:text-[var(--color-foreground)]"
           )}
           aria-pressed={locale === code}
         >

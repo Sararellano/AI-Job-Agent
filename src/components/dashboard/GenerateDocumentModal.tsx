@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { Job, JobApplication } from "@/types/database";
 import type { DocumentLanguage } from "@/types/documents";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
@@ -12,6 +13,7 @@ import {
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
 import { useLocale, useT } from "@/contexts/LocaleProvider";
+import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import { cn } from "@/lib/utils";
 
 interface GenerateDocumentModalProps {
@@ -98,12 +100,12 @@ export function GenerateDocumentModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="generate-modal-title"
     >
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+      <div className="surface-card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
             <h2 id="generate-modal-title" className="text-lg font-semibold">
@@ -113,21 +115,16 @@ export function GenerateDocumentModal({
               {job.title} {t("generate.at")} {job.company}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 hover:bg-[var(--color-background)]"
-            aria-label={t("generate.close")}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label={t("generate.close")}>
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         <label className="mb-2 block text-sm font-medium">{t("generate.template")}</label>
         <select
           value={templateId}
           onChange={(e) => setTemplateId(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+          className={cn("mb-4", inputClassName)}
         >
           {templates.map((tpl) => (
             <option key={tpl.id} value={tpl.id}>
@@ -142,7 +139,7 @@ export function GenerateDocumentModal({
         <select
           value={documentLanguage}
           onChange={(e) => setDocumentLanguage(e.target.value as DocumentLanguage)}
-          className="mb-4 w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none"
+          className={cn("mb-4", inputClassName)}
         >
           <option value="en">{t("generate.langEn")}</option>
           <option value="es">{t("generate.langEs")}</option>
@@ -156,7 +153,7 @@ export function GenerateDocumentModal({
           rows={6}
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
-          className="w-full resize-y rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          className={textareaClassName}
         />
 
         <PhotoUploadField
@@ -174,28 +171,21 @@ export function GenerateDocumentModal({
         )}
 
         <div className="mt-5 flex gap-3">
-          <button
+          <Button
             type="button"
             onClick={handleGenerate}
             disabled={loading || !instructions.trim()}
-            className={cn(
-              "flex-1 rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium hover:bg-[var(--color-accent-hover)]",
-              (loading || !instructions.trim()) && "opacity-60"
-            )}
+            className="flex-1"
           >
             {loading
               ? t("generate.generating")
               : type === "cv"
                 ? t("generate.generateCv")
                 : t("generate.generateCover")}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[var(--color-card-border)] px-4 py-2.5 text-sm"
-          >
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
             {t("generate.cancel")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

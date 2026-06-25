@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/contexts/LocaleProvider";
+import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import type { Job } from "@/types/database";
 
 interface JobFromDescriptionFormProps {
   onJobCreated: (job: Job) => void;
 }
-
-const inputClass =
-  "w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]";
 
 /**
  * Add a job by pasting the full description (no URL required).
@@ -61,11 +60,11 @@ export function JobFromDescriptionForm({ onJobCreated }: JobFromDescriptionFormP
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium">{t("addJob.fieldTitle")}</label>
-          <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input className={inputClassName} value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">{t("addJob.fieldCompany")}</label>
-          <input className={inputClass} value={company} onChange={(e) => setCompany(e.target.value)} />
+          <input className={inputClassName} value={company} onChange={(e) => setCompany(e.target.value)} />
         </div>
       </div>
 
@@ -73,7 +72,7 @@ export function JobFromDescriptionForm({ onJobCreated }: JobFromDescriptionFormP
         <label className="mb-1 block text-xs font-medium">{t("newJob.fieldDescription")}</label>
         <p className="mb-1 text-xs text-[var(--color-muted)]">{t("newJob.fieldDescriptionHint")}</p>
         <textarea
-          className={inputClass}
+          className={textareaClassName}
           rows={12}
           required
           value={description}
@@ -81,14 +80,10 @@ export function JobFromDescriptionForm({ onJobCreated }: JobFromDescriptionFormP
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={creating}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" disabled={creating} className="w-full">
         <FileText className="h-4 w-4" />
         {creating ? t("newJob.creating") : t("newJob.createApplication")}
-      </button>
+      </Button>
 
       {message && <p className="text-sm text-[var(--color-danger)]">{message}</p>}
     </form>

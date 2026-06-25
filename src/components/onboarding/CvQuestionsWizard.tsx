@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/contexts/LocaleProvider";
+import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import { cn } from "@/lib/utils";
 import type { CustomCvAnswer, CustomCvQuestion } from "@/types/skills";
 
@@ -82,23 +84,19 @@ export function CvQuestionsWizard({ onComplete }: CvQuestionsWizardProps) {
 
   if (questions.length === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6 text-center">
+      <div className="surface-card p-6 text-center">
         <p className="mb-4 text-sm text-[var(--color-muted)]">
           {t("onboarding.noQuestions")}
         </p>
-        <button
-          type="button"
-          onClick={() => onComplete()}
-          className="rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium"
-        >
+        <Button type="button" onClick={() => onComplete()}>
           {t("cvQuestions.finish")}
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+    <div className="surface-card p-6">
       <h2 className="mb-1 text-lg font-semibold">{t("cvQuestions.title")}</h2>
       <p className="mb-6 text-sm text-[var(--color-muted)]">
         {t("cvQuestions.subtitle")}
@@ -123,7 +121,7 @@ export function CvQuestionsWizard({ onComplete }: CvQuestionsWizardProps) {
                 onChange={(e) => setText(q.id, e.target.value)}
                 rows={3}
                 placeholder={t("cvQuestions.textPlaceholder")}
-                className="w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                className={textareaClassName}
               />
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -133,9 +131,9 @@ export function CvQuestionsWizard({ onComplete }: CvQuestionsWizardProps) {
                     type="button"
                     onClick={() => setYesNo(q.id, opt)}
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:-translate-y-px active:scale-[0.98]",
                       answers[q.id]?.value === opt
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                        ? "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_10%,white)] text-[var(--color-accent)] shadow-sm"
                         : "border-[var(--color-card-border)] hover:border-[var(--color-accent)]"
                     )}
                   >
@@ -149,18 +147,13 @@ export function CvQuestionsWizard({ onComplete }: CvQuestionsWizardProps) {
       </div>
 
       <div className="mt-6 flex justify-end gap-2">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => saveBatch(isLastBatch)}
-          className="rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="button" disabled={saving} onClick={() => saveBatch(isLastBatch)}>
           {saving
             ? t("onboarding.saving")
             : isLastBatch
               ? t("cvQuestions.finish")
               : t("cvQuestions.continue")}
-        </button>
+        </Button>
       </div>
     </div>
   );

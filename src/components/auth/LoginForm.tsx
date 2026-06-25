@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/contexts/LocaleProvider";
+import { inputClassName } from "@/lib/ui/input-styles";
 import { cn } from "@/lib/utils";
 
 export function LoginForm() {
@@ -45,7 +47,7 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          className={inputClassName}
           placeholder="you@example.com"
         />
       </div>
@@ -59,7 +61,7 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+          className={inputClassName}
           placeholder="••••••••"
         />
       </div>
@@ -68,16 +70,9 @@ export function LoginForm() {
           {error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={loading}
-        className={cn(
-          "w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium transition-colors hover:bg-[var(--color-accent-hover)]",
-          loading && "opacity-60"
-        )}
-      >
+      <Button type="submit" disabled={loading} className="w-full">
         {loading ? t("auth.signingIn") : t("auth.signIn")}
-      </button>
+      </Button>
       <p className="text-center text-sm text-[var(--color-muted)]">
         {t("auth.noAccount")}{" "}
         <Link href="/register" className="text-[var(--color-accent)] hover:underline">

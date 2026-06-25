@@ -56,7 +56,7 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6">
+    <div className="surface-card p-6">
       <h2 className="mb-1 text-lg font-semibold">{t("onboarding.step1Title")}</h2>
       <p className="mb-4 text-sm text-[var(--color-muted)]">
         {t("onboarding.step1Subtitle")}
@@ -78,7 +78,7 @@ export function CvUploadStep({ existingFileName, onUploaded }: CvUploadStepProps
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          "flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-[var(--color-card-border)] p-8 transition-colors hover:border-[var(--color-accent)]",
+          "flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-[var(--color-card-border)] bg-[var(--color-background)] p-8 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-sm",
           uploading && "opacity-60"
         )}
       >

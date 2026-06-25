@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
 import {
@@ -70,77 +72,84 @@ export function ApplicationWorkspace({
     <div className="mx-auto max-w-7xl">
       <Link
         href="/applications"
-        className="mb-4 inline-block text-sm text-[var(--color-muted)] hover:text-[var(--color-accent)]"
+        className="mb-4 inline-block text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-accent)]"
       >
         {t("workspace.back")}
       </Link>
 
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {job.title} <span className="text-[var(--color-muted)]">@ {job.company}</span>
-          </h1>
-          {job.salary && (
-            <p className="mt-1 text-sm text-[var(--color-success)]">{job.salary}</p>
+      <ScrollReveal>
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {job.title}{" "}
+              <span className="text-[var(--color-muted)]">@ {job.company}</span>
+            </h1>
+            {job.salary && (
+              <p className="mt-1 text-sm text-[var(--color-success)]">{job.salary}</p>
+            )}
+          </div>
+          {job.url && (
+            <a
+              href={job.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-4 py-2 text-sm shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-[var(--color-accent)] hover:shadow-md"
+            >
+              {t("job.openPosting")}
+              <ExternalLink className="h-4 w-4" />
+            </a>
           )}
-        </div>
-        {job.url && (
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-sm hover:border-[var(--color-accent)]"
-          >
-            {t("job.openPosting")}
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
-      </header>
+        </header>
+      </ScrollReveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div>
-          {cvData ? (
-            <WorkspaceDocumentPanel
-              type="cv"
-              data={cvData}
-              profile={profile}
-              photoUrl={cvPhotoUrl}
-              jobTitle={job.title}
-              company={job.company}
-              jobId={job.id}
-              onSaved={(app) => handleApplicationUpdate(app)}
-              onRegenerate={() => setModalType("cv")}
-            />
-          ) : (
-            <EmptyDocPanel
-              label={t("workspace.noCv")}
-              createLabel={t("job.createCv")}
-              onCreate={() => setModalType("cv")}
-            />
-          )}
-        </div>
+        <ScrollReveal delay={80}>
+          <div>
+            {cvData ? (
+              <WorkspaceDocumentPanel
+                type="cv"
+                data={cvData}
+                profile={profile}
+                photoUrl={cvPhotoUrl}
+                jobTitle={job.title}
+                company={job.company}
+                jobId={job.id}
+                onSaved={(app) => handleApplicationUpdate(app)}
+                onRegenerate={() => setModalType("cv")}
+              />
+            ) : (
+              <EmptyDocPanel
+                label={t("workspace.noCv")}
+                createLabel={t("job.createCv")}
+                onCreate={() => setModalType("cv")}
+              />
+            )}
+          </div>
+        </ScrollReveal>
 
-        <div>
-          {coverData ? (
-            <WorkspaceDocumentPanel
-              type="cover_letter"
-              data={coverData}
-              profile={profile}
-              photoUrl={coverPhotoUrl}
-              jobTitle={job.title}
-              company={job.company}
-              jobId={job.id}
-              onSaved={(app) => handleApplicationUpdate(app)}
-              onRegenerate={() => setModalType("cover_letter")}
-            />
-          ) : (
-            <EmptyDocPanel
-              label={t("workspace.noCover")}
-              createLabel={t("job.createCover")}
-              onCreate={() => setModalType("cover_letter")}
-            />
-          )}
-        </div>
+        <ScrollReveal delay={160}>
+          <div>
+            {coverData ? (
+              <WorkspaceDocumentPanel
+                type="cover_letter"
+                data={coverData}
+                profile={profile}
+                photoUrl={coverPhotoUrl}
+                jobTitle={job.title}
+                company={job.company}
+                jobId={job.id}
+                onSaved={(app) => handleApplicationUpdate(app)}
+                onRegenerate={() => setModalType("cover_letter")}
+              />
+            ) : (
+              <EmptyDocPanel
+                label={t("workspace.noCover")}
+                createLabel={t("job.createCover")}
+                onCreate={() => setModalType("cover_letter")}
+              />
+            )}
+          </div>
+        </ScrollReveal>
       </div>
 
       {modalType && (
@@ -178,15 +187,11 @@ function EmptyDocPanel({
   onCreate: () => void;
 }) {
   return (
-    <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-card-border)] p-8 text-center">
+    <div className="surface-card flex min-h-[300px] flex-col items-center justify-center border-dashed p-8 text-center">
       <p className="mb-4 text-sm text-[var(--color-muted)]">{label}</p>
-      <button
-        type="button"
-        onClick={onCreate}
-        className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white"
-      >
+      <Button type="button" onClick={onCreate}>
         {createLabel}
-      </button>
+      </Button>
     </div>
   );
 }

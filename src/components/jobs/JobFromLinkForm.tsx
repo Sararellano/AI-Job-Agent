@@ -3,16 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { useT } from "@/contexts/LocaleProvider";
+import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import type { Job } from "@/types/database";
 import type { ScrapedJobDraft } from "@/services/job-scrape";
 
 interface JobFromLinkFormProps {
   onJobCreated: (job: Job) => void;
 }
-
-const inputClass =
-  "w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]";
 
 /**
  * Add a job by pasting a URL — scrapes and parses with AI.
@@ -111,48 +110,40 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://..."
-            className={inputClass}
+            className={inputClassName}
           />
         </div>
         <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={analyzing}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
+          <Button type="submit" disabled={analyzing}>
             <Link2 className="h-4 w-4" />
             {analyzing ? t("newJob.analyzing") : t("newJob.analyzeUrl")}
-          </button>
+          </Button>
         </div>
       </form>
 
       {(draft || description) && (
-        <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-5">
+        <form onSubmit={handleCreate} className="surface-card space-y-4 p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium">{t("addJob.fieldTitle")}</label>
-              <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <input className={inputClassName} value={title} onChange={(e) => setTitle(e.target.value)} required />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium">{t("addJob.fieldCompany")}</label>
-              <input className={inputClass} value={company} onChange={(e) => setCompany(e.target.value)} required />
+              <input className={inputClassName} value={company} onChange={(e) => setCompany(e.target.value)} required />
             </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium">{t("addJob.fieldDescription")}</label>
-            <textarea className={inputClass} rows={8} value={description} onChange={(e) => setDescription(e.target.value)} required />
+            <textarea className={textareaClassName} rows={8} value={description} onChange={(e) => setDescription(e.target.value)} required />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium">{t("addJob.fieldRequirements")}</label>
-            <textarea className={inputClass} rows={3} value={requirements} onChange={(e) => setRequirements(e.target.value)} />
+            <textarea className={textareaClassName} rows={3} value={requirements} onChange={(e) => setRequirements(e.target.value)} />
           </div>
-          <button
-            type="submit"
-            disabled={creating}
-            className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          >
+          <Button type="submit" disabled={creating} className="w-full">
             {creating ? t("newJob.creating") : t("newJob.createApplication")}
-          </button>
+          </Button>
         </form>
       )}
 

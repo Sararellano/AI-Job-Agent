@@ -6,6 +6,7 @@ import type { UserProfile, DocumentFormat, CvDocument, CoverLetterDocument } fro
 import { CV_TEMPLATES, COVER_LETTER_TEMPLATES } from "@/types/documents";
 import { CvTemplateRenderer } from "@/components/documents/CvTemplates";
 import { CoverLetterTemplateRenderer } from "@/components/documents/CoverLetterTemplates";
+import { buildDocumentFilename } from "@/lib/export/document-filename";
 import { downloadDocument } from "@/lib/export/download-document";
 import { useT } from "@/contexts/LocaleProvider";
 import { cn } from "@/lib/utils";
@@ -67,9 +68,7 @@ export function DocumentPreviewPanel({
     setDownloading(format);
     setShowFormats(false);
     try {
-      const safeName = `${type}-${company}-${jobTitle}`
-        .replace(/[^a-z0-9-_]/gi, "_")
-        .slice(0, 60);
+      const safeName = buildDocumentFilename(type, profile, company);
       await downloadDocument(
         format,
         type,
