@@ -1,6 +1,6 @@
 # AI Job Agent
 
-Personal AI recruiter dashboard — free, user-controlled job application tool.
+Generate tailored CVs and cover letters for each job application — paste a link or description, customize, download, and apply manually.
 
 ## Setup
 
@@ -13,13 +13,7 @@ npm install
 ### 2. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Run migrations in order in the SQL Editor:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_photo_upload.sql`
-   - `supabase/migrations/003_profile_and_templates.sql`
-   - `supabase/migrations/004_github_extra_link.sql`
-   - `supabase/migrations/005_cv_onboarding.sql`
-   - `supabase/migrations/006_security_policies.sql`
+2. Run migrations in order in the SQL Editor (`supabase/migrations/001` through `011`)
 3. Enable Email auth in Authentication → Providers
 4. Copy project URL and anon key to `.env.local`:
 
@@ -35,51 +29,31 @@ OPENAI_API_KEY=optional_for_real_ai_generation
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) → register → `/onboarding` or dashboard.
+Open [http://localhost:3000](http://localhost:3000) → register → `/onboarding` → `/profile`.
 
-### Optional AI (CV analysis only)
+### Optional AI
 
 ```env
-GROQ_API_KEY=...   # https://console.groq.com — llama-3.1-8b-instant
-# or
+GROQ_API_KEY=...   # https://console.groq.com
 GEMINI_API_KEY=... # https://aistudio.google.com
 ```
 
-One API call per "Enhance with AI" click. The rest runs locally with zero tokens.
+Used for optional CV enhance, job URL scraping, and document generation.
+
+## Workflow
+
+1. **Onboarding** — upload CV, answer skill questions, complete profile
+2. **Profile** (`/profile`) — contact details, default CV/cover instructions, photo
+3. **New application** (`/jobs/new`) — paste job URL (scraped with AI) or description manually
+4. **Workspace** (`/applications/[id]`) — generate, edit, and download CV + cover letter
+5. **Applications** (`/applications`) — list all your applications and document status
 
 ## Testing
 
 ```bash
-npm test           # run all unit tests
-npm run test:watch # watch mode
+npm test
+npm run test:watch
 ```
-
-**40+ tests** covering CV parsing, skill discovery, document parsing, security validation, and rate limiting. See [docs/12_TESTING.md](docs/12_TESTING.md).
-
-## Security
-
-- **Auth** — Supabase + middleware on `/dashboard` and `/onboarding`
-- **RLS** — users only access their own settings and applications
-- **Storage** — CV documents private per user; photos public by URL (see docs)
-- **API** — session check on every route; input validation and rate limits on AI endpoints
-- **Headers** — `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`
-
-Full guide: [docs/11_SECURITY.md](docs/11_SECURITY.md)
-
-## Onboarding (`/onboarding`)
-
-1. **Upload CV** — PDF/DOCX, parsed locally (`pdf-parse` + `mammoth`)
-2. **Review** — track, skills, confidence; optional Groq/Gemini enhance
-3. **Skill discovery** — yes/no questions from taxonomy (e.g. `.yml` → YAML)
-4. **Evidence profile** — saved to Supabase, shown on dashboard
-
-## Features
-
-- **Auth** — register / login with Supabase
-- **Dashboard** — all job offers with company, role, salary, summary, full description
-- **Default instructions** — global CV and cover letter generation rules
-- **Per-offer generation** — override instructions per company (e.g. blue CV with photo vs B&W English)
-- **Status tracking** — Pending, Applied, Interview, Rejected
 
 ## Stack
 

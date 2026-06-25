@@ -4,32 +4,32 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useT } from "@/contexts/LocaleProvider";
-import type { AiCvAnalysis, OnboardingState, ParsedCvLocal, SkillEvidence } from "@/types/skills";
-import type { JobPreferences } from "@/types/job-preferences";
+import type { AiCvAnalysis, OnboardingState, ParsedCvLocal } from "@/types/skills";
+import type { UserProfile } from "@/types/documents";
 import { CvUploadStep } from "@/components/onboarding/CvUploadStep";
 import { ParseReviewStep } from "@/components/onboarding/ParseReviewStep";
-import { SkillDiscoveryWizard } from "@/components/onboarding/SkillDiscoveryWizard";
-import { JobPreferencesStep } from "@/components/onboarding/JobPreferencesStep";
+import { CvQuestionsWizard } from "@/components/onboarding/CvQuestionsWizard";
+import { ProfileBasicStep } from "@/components/onboarding/ProfileBasicStep";
 
 interface OnboardingClientProps {
   initial: OnboardingState;
+  initialProfile: UserProfile;
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
 
-export function OnboardingClient({ initial }: OnboardingClientProps) {
+export function OnboardingClient({ initial, initialProfile }: OnboardingClientProps) {
   const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>(() => {
     if (initial.onboardingCompleted) return 4;
+    if (initial.onboardingStep >= 4) return 4;
     if (initial.onboardingStep >= 3) return 3;
-    if (initial.parsed) return initial.onboardingStep >= 2 ? 2 : 1;
+    if (initial.onboardingStep >= 2) return 2;
+    if (initial.parsed) return initial.onboardingStep >= 1 ? 1 : 1;
     return 0;
   });
   const [parsed, setParsed] = useState<ParsedCvLocal | null>(initial.parsed);
-  const [skillProfile, setSkillProfile] = useState<SkillEvidence[]>(
-    initial.skillProfile
-  );
   const [aiAnalysis, setAiAnalysis] = useState<AiCvAnalysis | null>(
     initial.aiAnalysis
   );
@@ -37,31 +37,28 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
 
   function handleUploaded(data: {
     parsed: ParsedCvLocal;
-    skillProfile: SkillEvidence[];
+    skillProfile: unknown[];
     cvFileName: string;
   }) {
     setParsed(data.parsed);
-    setSkillProfile(data.skillProfile);
     setCvFileName(data.cvFileName);
     setStep(1);
   }
 
   function handleAiEnhanced(data: {
     parsed: ParsedCvLocal;
-    skillProfile: SkillEvidence[];
+    skillProfile: unknown[];
     ai: AiCvAnalysis;
   }) {
     setParsed(data.parsed);
-    setSkillProfile(data.skillProfile);
     setAiAnalysis(data.ai);
   }
 
-  function handleSkillsComplete(profile: SkillEvidence[]) {
-    setSkillProfile(profile);
+  function handleQuestionsComplete() {
     setStep(3);
   }
 
-  function handlePreferencesComplete(_prefs: JobPreferences) {
+  function handleProfileComplete() {
     setStep(4);
     router.refresh();
   }
@@ -69,12 +66,9 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <header className="mb-8 pr-20">
-        <Link
-          href="/dashboard"
-          className="text-sm text-[var(--color-muted)] hover:text-[var(--color-accent)]"
-        >
-          {t("onboarding.backDashboard")}
-        </Link>
+        <p className="text-sm text-[var(--color-muted)]">
+          {t("onboarding.backOnboarding")}
+        </p>
         <h1 className="mt-2 text-2xl font-bold">{t("onboarding.title")}</h1>
         <p className="text-sm text-[var(--color-muted)]">{t("onboarding.subtitle")}</p>
         <div className="mt-4 flex gap-2">
@@ -100,16 +94,23 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
         {step === 1 && parsed && (
           <ParseReviewStep
             parsed={parsed}
-            skillProfile={skillProfile}
+            skillProfile={initial.skillProfile}
             aiAnalysis={aiAnalysis}
             onContinue={() => setStep(2)}
             onAiEnhanced={handleAiEnhanced}
           />
         )}
 
-        {step === 2 && <SkillDiscoveryWizard onComplete={handleSkillsComplete} />}
+        {step === 2 && (
+          <CvQuestionsWizard onComplete={handleQuestionsComplete} />
+        )}
 
-        {step === 3 && <JobPreferencesStep onComplete={handlePreferencesComplete} />}
+        {step === 3 && (
+          <ProfileBasicStep
+            initialProfile={initialProfile}
+            onComplete={handleProfileComplete}
+          />
+        )}
 
         {step === 4 && (
           <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-6 text-center">
@@ -117,14 +118,24 @@ export function OnboardingClient({ initial }: OnboardingClientProps) {
               {t("onboarding.readyTitle")}
             </h2>
             <p className="mb-4 text-sm text-[var(--color-muted)]">
-              {t("onboarding.readySubtitle", { count: skillProfile.length })}
+              {t("onboarding.readySubtitle", {
+                count: initial.skillProfile.length,
+              })}
             </p>
-            <Link
-              href="/dashboard"
-              className="inline-block rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium"
-            >
-              {t("onboarding.goDashboard")}
-            </Link>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                href="/profile"
+                className="inline-block rounded-lg border border-[var(--color-card-border)] px-6 py-2.5 text-sm font-medium"
+              >
+                {t("onboarding.goProfile")}
+              </Link>
+              <Link
+                href="/jobs/new"
+                className="inline-block rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium text-white"
+              >
+                {t("onboarding.goNewJob")}
+              </Link>
+            </div>
           </div>
         )}
       </div>

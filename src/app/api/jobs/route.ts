@@ -43,23 +43,34 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "title, company, description, and a valid http(s) url are required",
+          "description and at least title or company are required; url must be valid when provided",
       },
       { status: 400 }
     );
   }
 
-  const { data: existing } = await supabase
-    .from("jobs")
-    .select("id")
-    .eq("url", jobInput.url)
-    .maybeSingle();
+  if (jobInput.url) {
+    const { data: existing } = await supabase
+      .from("jobs")
+      .select("id")
+      .eq("url", jobInput.url)
+      .maybeSingle();
 
-  if (existing) {
-    return NextResponse.json(
-      { error: "A job with this URL already exists", jobId: existing.id },
-      { status: 409 }
-    );
+    if (existing) {
+      await supabase.from("applications").upsert(
+        {
+          job_id: existing.id,
+          user_id: user.id,
+          status: "pending",
+        },
+        { onConflict: "job_id,user_id", ignoreDuplicates: true }
+      );
+
+      return NextResponse.json(
+        { error: "A job with this URL already exists", jobId: existing.id },
+        { status: 409 }
+      );
+    }
   }
 
   const { data: job, error } = await supabase
@@ -73,6 +84,7 @@ export async function POST(request: Request) {
       url: jobInput.url,
       source: jobInput.source,
       requirements: jobInput.requirements,
+      input_mode: jobInput.input_mode ?? "manual",
     })
     .select()
     .single();
@@ -85,6 +97,16 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const { error: applicationError } = await supabase.from("applications").insert({
+    job_id: job.id,
+    user_id: user.id,
+    status: "pending",
+  });
+
+  if (applicationError && applicationError.code !== "23505") {
+    return NextResponse.json({ error: applicationError.message }, { status: 500 });
   }
 
   return NextResponse.json({ job }, { status: 201 });

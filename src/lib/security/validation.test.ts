@@ -153,6 +153,25 @@ describe("sanitizeJobInput", () => {
       summary: null,
       salary: null,
       requirements: "React",
+      input_mode: "link",
+    });
+  });
+
+  it("allows description-only manual jobs without url", () => {
+    const result = sanitizeJobInput({
+      description: "Full stack role with React",
+    });
+
+    expect(result).toEqual({
+      title: "Untitled role",
+      company: "Unknown company",
+      description: "Full stack role with React",
+      url: null,
+      source: "manual",
+      summary: null,
+      salary: null,
+      requirements: null,
+      input_mode: "manual",
     });
   });
 

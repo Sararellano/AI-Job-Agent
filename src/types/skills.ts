@@ -59,6 +59,18 @@ export interface DiscoveryQuestion {
   priority: number;
 }
 
+export interface CustomCvQuestion {
+  id: string;
+  text: string;
+  type: "yes_no" | "text";
+  category: "skill" | "experience" | "gap" | "merit";
+}
+
+export interface CustomCvAnswer {
+  type: "yes_no" | "text";
+  value: string;
+}
+
 export interface OnboardingState {
   cvFileUrl: string | null;
   cvFileName: string | null;

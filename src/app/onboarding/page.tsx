@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingClient } from "@/components/onboarding/OnboardingClient";
 import { settingsToOnboarding } from "@/lib/onboarding/state";
+import { settingsToProfile } from "@/lib/documents/profile";
+import { ensureUserSettings } from "@/lib/server/app-data";
 
 export const dynamic = "force-dynamic";
 
@@ -15,17 +17,13 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
-  const { data: settings } = await supabase
-    .from("user_document_settings")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
+  const settings = await ensureUserSettings(supabase, user.id);
   const initial = settingsToOnboarding(settings);
+  const initialProfile = settingsToProfile(settings);
 
   return (
     <main className="min-h-screen">
-      <OnboardingClient initial={initial} />
+      <OnboardingClient initial={initial} initialProfile={initialProfile} />
     </main>
   );
 }

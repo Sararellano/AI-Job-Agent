@@ -1,0 +1,164 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Link2 } from "lucide-react";
+import { useT } from "@/contexts/LocaleProvider";
+import type { Job } from "@/types/database";
+import type { ScrapedJobDraft } from "@/services/job-scrape";
+
+interface JobFromLinkFormProps {
+  onJobCreated: (job: Job) => void;
+}
+
+const inputClass =
+  "w-full rounded-lg border border-[var(--color-card-border)] bg-[var(--color-background)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]";
+
+/**
+ * Add a job by pasting a URL — scrapes and parses with AI.
+ */
+export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
+  const t = useT();
+  const router = useRouter();
+  const [url, setUrl] = useState("");
+  const [draft, setDraft] = useState<ScrapedJobDraft | null>(null);
+  const [title, setTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [description, setDescription] = useState("");
+  const [summary, setSummary] = useState("");
+  const [requirements, setRequirements] = useState("");
+  const [salary, setSalary] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleAnalyze(e: React.FormEvent) {
+    e.preventDefault();
+    setAnalyzing(true);
+    setMessage(null);
+    setDraft(null);
+
+    const res = await fetch("/api/jobs/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    setAnalyzing(false);
+
+    if (res.ok) {
+      const data = (await res.json()) as { draft: ScrapedJobDraft };
+      setDraft(data.draft);
+      setTitle(data.draft.title);
+      setCompany(data.draft.company);
+      setDescription(data.draft.description);
+      setSummary(data.draft.summary);
+      setRequirements(data.draft.requirements);
+      setSalary(data.draft.salary);
+      return;
+    }
+
+    setMessage(t("newJob.scrapeFailed"));
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setMessage(null);
+
+    const res = await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        company,
+        url,
+        description,
+        summary,
+        requirements,
+        salary,
+        input_mode: "link",
+      }),
+    });
+
+    setCreating(false);
+
+    if (res.ok) {
+      const data = (await res.json()) as { job: Job };
+      onJobCreated(data.job);
+      router.push(`/applications/${data.job.id}`);
+      return;
+    }
+
+    const data = (await res.json()) as { error?: string; jobId?: string };
+    if (res.status === 409 && data.jobId) {
+      router.push(`/applications/${data.jobId}`);
+      return;
+    }
+    setMessage(data.error ?? t("addJob.failed"));
+  }
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={handleAnalyze} className="flex gap-2">
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium">
+            {t("newJob.fieldUrl")}
+          </label>
+          <input
+            type="url"
+            required
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://..."
+            className={inputClass}
+          />
+        </div>
+        <div className="flex items-end">
+          <button
+            type="submit"
+            disabled={analyzing}
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            <Link2 className="h-4 w-4" />
+            {analyzing ? t("newJob.analyzing") : t("newJob.analyzeUrl")}
+          </button>
+        </div>
+      </form>
+
+      {(draft || description) && (
+        <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card)] p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("addJob.fieldTitle")}</label>
+              <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} required />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium">{t("addJob.fieldCompany")}</label>
+              <input className={inputClass} value={company} onChange={(e) => setCompany(e.target.value)} required />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">{t("addJob.fieldDescription")}</label>
+            <textarea className={inputClass} rows={8} value={description} onChange={(e) => setDescription(e.target.value)} required />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium">{t("addJob.fieldRequirements")}</label>
+            <textarea className={inputClass} rows={3} value={requirements} onChange={(e) => setRequirements(e.target.value)} />
+          </div>
+          <button
+            type="submit"
+            disabled={creating}
+            className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {creating ? t("newJob.creating") : t("newJob.createApplication")}
+          </button>
+        </form>
+      )}
+
+      {message && (
+        <p className="text-sm text-[var(--color-danger)]">{message}</p>
+      )}
+    </div>
+  );
+}

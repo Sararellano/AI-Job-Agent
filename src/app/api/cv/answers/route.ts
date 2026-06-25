@@ -70,7 +70,6 @@ export async function POST(request: Request) {
       skill_profile: skillProfile,
       additional_info: additionalInfo,
       onboarding_step: body.complete ? 3 : 2,
-      onboarding_completed: body.complete ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", user.id)

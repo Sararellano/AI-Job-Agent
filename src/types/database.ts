@@ -26,17 +26,19 @@ export interface Job {
   source: string | null;
   requirements: string | null;
   created_at: string;
+  input_mode?: string | null;
 }
 
 export interface CreateJobInput {
   title: string;
   company: string;
   description: string;
-  url: string;
+  url: string | null;
   source?: JobSource | null;
   summary?: string | null;
   salary?: string | null;
   requirements?: string | null;
+  input_mode?: "synced" | "link" | "manual";
 }
 
 export interface JobApplication {
@@ -90,6 +92,7 @@ export interface UserDocumentSettings {
   onboarding_completed: boolean | null;
   onboarding_step: number | null;
   job_preferences: Record<string, unknown> | null;
+  cv_custom_questions: Record<string, unknown>[] | null;
   updated_at: string;
 }
 

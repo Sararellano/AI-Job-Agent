@@ -30,7 +30,7 @@ export function RegisterForm() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = "/onboarding";
   }
 
   return (

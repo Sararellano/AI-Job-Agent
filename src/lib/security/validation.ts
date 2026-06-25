@@ -270,9 +270,15 @@ export function sanitizeJobInput(raw: unknown): CreateJobInput | null {
     String(body.description ?? ""),
     MAX_JOB_DESCRIPTION_LENGTH
   );
-  const url = normalizeJobUrl(String(body.url ?? ""));
 
-  if (!title || !company || !description || !url) {
+  if (!description) {
+    return null;
+  }
+
+  const rawUrl = String(body.url ?? "").trim();
+  const url = rawUrl ? normalizeJobUrl(rawUrl) : null;
+
+  if (rawUrl && !url) {
     return null;
   }
 
@@ -294,16 +300,28 @@ export function sanitizeJobInput(raw: unknown): CreateJobInput | null {
   const source =
     rawSource && isValidJobSource(rawSource)
       ? rawSource
-      : inferJobSourceFromUrl(url);
+      : url
+        ? inferJobSourceFromUrl(url)
+        : "manual";
+
+  const inputMode =
+    body.input_mode === "link" ||
+    body.input_mode === "manual" ||
+    body.input_mode === "synced"
+      ? body.input_mode
+      : url
+        ? "link"
+        : "manual";
 
   return {
-    title,
-    company,
+    title: title || "Untitled role",
+    company: company || "Unknown company",
     description,
     url,
     source,
     summary: summary || null,
     salary: salary || null,
     requirements: requirements || null,
+    input_mode: inputMode,
   };
 }
