@@ -41,6 +41,7 @@ export function OnboardingClient({ initial, initialProfile }: OnboardingClientPr
     parsed: ParsedCvLocal;
     skillProfile: unknown[];
     cvFileName: string;
+    profile?: UserProfile;
   }) {
     setParsed(data.parsed);
     setCvFileName(data.cvFileName);
@@ -95,6 +96,7 @@ export function OnboardingClient({ initial, initialProfile }: OnboardingClientPr
           <ScrollReveal delay={80}>
             <CvUploadStep
               existingFileName={cvFileName}
+              extractProfile
               onUploaded={handleUploaded}
             />
           </ScrollReveal>

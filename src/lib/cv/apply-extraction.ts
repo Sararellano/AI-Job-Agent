@@ -88,6 +88,7 @@ export async function extractAndApplyCvProfile(
       primary_track: mergedParsed.primaryTrack,
       skill_profile: skillProfile,
       ai_cv_analysis: ai,
+      cv_profile_extraction: extraction,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);

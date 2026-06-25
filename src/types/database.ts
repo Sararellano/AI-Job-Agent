@@ -89,6 +89,7 @@ export interface UserDocumentSettings {
   skill_profile: Record<string, unknown>[] | null;
   question_answers: Record<string, string> | null;
   ai_cv_analysis: Record<string, unknown> | null;
+  cv_profile_extraction: Record<string, unknown> | null;
   onboarding_completed: boolean | null;
   onboarding_step: number | null;
   job_preferences: Record<string, unknown> | null;

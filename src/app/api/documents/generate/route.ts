@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateDocument } from "@/lib/ai/generate-document";
 import { settingsToProfile } from "@/lib/documents/profile";
+import { resolveCvExtraction } from "@/lib/cv/resolve-cv-extraction";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
   isValidUuid,
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const profile = settingsToProfile(settings);
+  const cvExtraction = resolveCvExtraction(settings);
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
       profile,
       templateId,
       documentLanguage,
+      cvExtraction,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";

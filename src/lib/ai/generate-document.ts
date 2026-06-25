@@ -14,6 +14,7 @@ import {
   serializeCoverLetterContent,
 } from "@/lib/documents/parse-content";
 import { formatProfileForPrompt } from "@/lib/documents/profile";
+import type { CvProfileExtraction } from "@/types/skills";
 
 interface GenerateDocumentInput {
   type: "cv" | "cover_letter";
@@ -33,6 +34,7 @@ interface GenerateDocumentInput {
   profile: UserProfile;
   templateId?: string;
   documentLanguage?: DocumentLanguage;
+  cvExtraction?: CvProfileExtraction | null;
 }
 
 /**
@@ -41,12 +43,10 @@ interface GenerateDocumentInput {
 export async function generateDocument(
   input: GenerateDocumentInput
 ): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
   const lang = input.documentLanguage ?? "en";
 
-  if (apiKey) {
-    return generateWithOpenAI({ ...input, documentLanguage: lang }, apiKey);
-  }
+  const aiContent = await generateWithAi({ ...input, documentLanguage: lang });
+  if (aiContent) return aiContent;
 
   return input.type === "cv"
     ? serializeCvContent(buildCvTemplate({ ...input, documentLanguage: lang }))
@@ -56,66 +56,89 @@ export async function generateDocument(
 }
 
 function buildCvTemplate(input: GenerateDocumentInput): CvDocument {
-  const { job, profile, instructions } = input;
+  const { job, profile, cvExtraction } = input;
   const es = input.documentLanguage === "es";
   const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
   const role = profile.targetRole || job.title;
   const expectedSalary =
     profile.salaryRange || job.salary || (es ? "A convenir" : "Open to discussion");
 
+  const jobSkills = extractSkills(job.description);
+  const skills =
+    cvExtraction?.skills?.length
+      ? [...new Set([...cvExtraction.skills, ...jobSkills])]
+      : jobSkills.length > 0
+        ? jobSkills
+        : cvExtraction?.skills ?? [];
+
+  const summary = cvExtraction?.summary
+    ? es
+      ? `${cvExtraction.summary} Candidatura para ${job.title} en ${job.company}.`
+      : `${cvExtraction.summary} Applying for ${job.title} at ${job.company}.`
+    : es
+      ? `${name} es ${role} y candidata a ${job.title} en ${job.company}.`
+      : `${name} is a ${role} applying for ${job.title} at ${job.company}.`;
+
+  const experience =
+    cvExtraction?.experience?.length
+      ? cvExtraction.experience
+      : [
+          {
+            role,
+            company: es ? "Empresa anterior" : "Previous Company",
+            period: "2021 — Present",
+            highlights: es
+              ? [
+                  "Entregué funcionalidades alineadas con los requisitos del puesto",
+                  "Colaboré con equipos multidisciplinares",
+                  "Apliqué habilidades relevantes para este rol",
+                ]
+              : [
+                  "Delivered features aligned with job requirements",
+                  "Collaborated with cross-functional teams",
+                  "Applied skills relevant to this role",
+                ],
+          },
+        ];
+
+  const education =
+    cvExtraction?.education ||
+    profile.additionalInfo ||
+    (es
+      ? "Grado universitario o experiencia equivalente"
+      : "Bachelor's degree or equivalent experience");
+
   return {
     version: 1,
     templateId: input.templateId ?? DEFAULT_CV_TEMPLATE,
-    summary: es
-      ? `${name} es ${role} y candidata a ${job.company}. ${job.summary ?? ""} ${instructions.slice(0, 200)}`.trim()
-      : `${name} is a ${role} applying to ${job.company}. ${job.summary ?? ""} ${instructions.slice(0, 200)}`.trim(),
-    experience: [
-      {
-        role: role,
-        company: es ? "Empresa anterior" : "Previous Company",
-        period: "2021 — Present",
-        highlights: es
-          ? [
-              "Entregué funcionalidades alineadas con los requisitos del puesto",
-              "Colaboré con equipos multidisciplinares",
-              "Apliqué habilidades relevantes para este rol",
-            ]
-          : [
-              "Delivered features aligned with job requirements",
-              "Collaborated with cross-functional teams",
-              "Applied skills relevant to this role",
-            ],
-      },
-    ],
-    skills: extractSkills(job.description),
-    education: profile.additionalInfo.includes("education")
-      ? profile.additionalInfo
-      : es
-        ? "Grado universitario o experiencia equivalente"
-        : "Bachelor's degree or equivalent experience",
+    summary,
+    experience,
+    skills,
+    education,
     jobHighlights: es
       ? [
           `Interés en ${job.title} en ${job.company}`,
           `Rango salarial: ${expectedSalary}`,
-          ...extractSkills(job.description)
+          ...skills
             .slice(0, 4)
             .map((s) => `Experiencia sólida en ${s}`),
         ]
       : [
           `Targeting ${job.title} at ${job.company}`,
           `Salary range: ${expectedSalary}`,
-          ...extractSkills(job.description)
-            .slice(0, 4)
-            .map((s) => `Strong ${s} experience`),
+          ...skills.slice(0, 4).map((s) => `Strong ${s} experience`),
         ],
   };
 }
 
 function buildCoverTemplate(input: GenerateDocumentInput): CoverLetterDocument {
-  const { job, profile, instructions } = input;
+  const { job, profile, cvExtraction } = input;
   const es = input.documentLanguage === "es";
   const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
   const locale = es ? "es-ES" : "en-GB";
+  const background =
+    cvExtraction?.summary?.slice(0, 400) ||
+    input.instructions.slice(0, 400);
 
   return {
     version: 1,
@@ -132,14 +155,14 @@ function buildCoverTemplate(input: GenerateDocumentInput): CoverLetterDocument {
           job.summary
             ? `Según mi investigación, ${job.summary}`
             : "La descripción del puesto encaja con mi trayectoria y objetivos profesionales.",
-          `Me encantaría conversar sobre cómo mis habilidades encajan con sus necesidades. ${instructions.slice(0, 150)}`,
+          `Me encantaría conversar sobre cómo mis habilidades encajan con sus necesidades. ${background}`,
         ]
       : [
           `I am writing to express my interest in the ${job.title} position at ${job.company}. As a ${profile.targetRole || "professional"} with experience relevant to your requirements, I am confident I can contribute effectively to your team.`,
           job.summary
             ? `From my research, ${job.summary}`
             : `Your job description resonates with my background and career goals.`,
-          `I would welcome the opportunity to discuss how my skills align with your needs. ${instructions.slice(0, 150)}`,
+          `I would welcome the opportunity to discuss how my skills align with your needs. ${background}`,
         ],
     closing: es ? `Atentamente,\n${name}` : `Sincerely,\n${name}`,
   };
@@ -177,10 +200,139 @@ function extractSkills(description: string): string[] {
   );
 }
 
-async function generateWithOpenAI(
+function formatCvExtractionForPrompt(
+  extraction: CvProfileExtraction | null | undefined
+): string {
+  if (!extraction) return "";
+
+  const lines: string[] = [
+    "REAL CV DATA — use these facts exactly. Do NOT invent employers, dates, or roles.",
+  ];
+
+  if (extraction.summary) {
+    lines.push(`\nProfessional summary:\n${extraction.summary}`);
+  }
+
+  if (extraction.experience.length > 0) {
+    lines.push("\nWork experience:");
+    for (const exp of extraction.experience) {
+      const header = [exp.role, exp.company, exp.period].filter(Boolean).join(" — ");
+      lines.push(`- ${header}`);
+      for (const h of exp.highlights) {
+        lines.push(`  • ${h}`);
+      }
+    }
+  }
+
+  if (extraction.skills.length > 0) {
+    lines.push(`\nSkills: ${extraction.skills.join(", ")}`);
+  }
+
+  if (extraction.education) {
+    lines.push(`\nEducation:\n${extraction.education}`);
+  }
+
+  return lines.join("\n");
+}
+
+async function generateWithAi(
+  input: GenerateDocumentInput
+): Promise<string | null> {
+  const openAiKey = process.env.OPENAI_API_KEY;
+  if (openAiKey) {
+    return generateWithOpenAI(input, openAiKey);
+  }
+
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    try {
+      return await generateWithGroq(input, groqKey);
+    } catch (err) {
+      console.error("Groq document generation failed:", err);
+    }
+  }
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      return await generateWithGemini(input, geminiKey);
+    } catch (err) {
+      console.error("Gemini document generation failed:", err);
+    }
+  }
+
+  return null;
+}
+
+async function generateWithGroq(
   input: GenerateDocumentInput,
   apiKey: string
 ): Promise<string> {
+  const payload = buildAiMessages(input);
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: payload.messages,
+      temperature: 0.4,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Groq API error: ${res.statusText}`);
+  }
+
+  const data = (await res.json()) as {
+    choices: { message: { content: string } }[];
+  };
+
+  return serializeAiOutput(input, data.choices[0]?.message?.content ?? "{}");
+}
+
+async function generateWithGemini(
+  input: GenerateDocumentInput,
+  apiKey: string
+): Promise<string> {
+  const payload = buildAiMessages(input);
+  const prompt = payload.messages
+    .map((m) => `${m.role.toUpperCase()}:\n${m.content}`)
+    .join("\n\n");
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.4,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Gemini API error: ${res.statusText}`);
+  }
+
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+  return serializeAiOutput(input, raw);
+}
+
+function buildAiMessages(input: GenerateDocumentInput): {
+  messages: { role: "system" | "user"; content: string }[];
+} {
   const isCv = input.type === "cv";
   const lang = input.documentLanguage ?? "en";
   const langLabel = lang === "es" ? "Spanish" : "English";
@@ -189,14 +341,56 @@ async function generateWithOpenAI(
     (isCv ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE);
 
   const systemPrompt = isCv
-    ? `You generate CV content as JSON only. Write ALL text fields in ${langLabel}. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
-    : `You generate cover letter content as JSON only. Write ALL text fields in ${langLabel}. Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
+    ? `You generate CV content as JSON only. Write ALL text fields in ${langLabel}. Use ONLY the candidate's real experience, education and skills from the provided CV data — never invent employers or dates. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
+    : `You generate cover letter content as JSON only. Write ALL text fields in ${langLabel}. Use the candidate's real background — do not invent facts. Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
 
   const photoNote = input.photoUrl
     ? `Include photo reference in summary if relevant: ${input.photoUrl}`
     : "No photo for this document.";
 
   const profileBlock = formatProfileForPrompt(input.profile);
+  const cvDataBlock = formatCvExtractionForPrompt(input.cvExtraction);
+
+  return {
+    messages: [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: `Output language: ${langLabel}
+
+${profileBlock}
+${cvDataBlock}
+
+${formatJobContext(input.job)}
+Instructions: ${input.instructions}
+${photoNote}`,
+      },
+    ],
+  };
+}
+
+function serializeAiOutput(
+  input: GenerateDocumentInput,
+  raw: string
+): string {
+  const isCv = input.type === "cv";
+  const templateId =
+    input.templateId ??
+    (isCv ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE);
+
+  const parsed = JSON.parse(raw) as CvDocument | CoverLetterDocument;
+  parsed.templateId = templateId;
+
+  return isCv
+    ? serializeCvContent(parsed as CvDocument)
+    : serializeCoverLetterContent(parsed as CoverLetterDocument);
+}
+
+async function generateWithOpenAI(
+  input: GenerateDocumentInput,
+  apiKey: string
+): Promise<string> {
+  const payload = buildAiMessages(input);
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -206,20 +400,8 @@ async function generateWithOpenAI(
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Output language: ${langLabel}
-
-${profileBlock}
-
-${formatJobContext(input.job)}
-Instructions: ${input.instructions}
-${photoNote}`,
-        },
-      ],
-      temperature: 0.7,
+      messages: payload.messages,
+      temperature: 0.4,
       response_format: { type: "json_object" },
     }),
   });
@@ -232,11 +414,8 @@ ${photoNote}`,
     choices: { message: { content: string } }[];
   };
 
-  const raw = data.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as CvDocument | CoverLetterDocument;
-  parsed.templateId = templateId;
-
-  return isCv
-    ? serializeCvContent(parsed as CvDocument)
-    : serializeCoverLetterContent(parsed as CoverLetterDocument);
+  return serializeAiOutput(
+    input,
+    data.choices[0]?.message?.content ?? "{}"
+  );
 }

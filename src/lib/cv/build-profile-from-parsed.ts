@@ -200,37 +200,93 @@ function extractLabeledValue(text: string, pattern: RegExp): string | null {
 }
 
 function extractEducationSection(text: string): string {
-  const match = text.match(
-    /(?:education|formación|estudios|academic)[:\s]*\n?([\s\S]{10,800}?)(?:\n\n|\n(?:experience|experiencia|skills|habilidades|work)\b)/i
+  const sectionMatch = text.match(
+    /(?:education|formación|estudios|academic|educación)[:\s]*\n([\s\S]{10,1200}?)(?:\n\n|\n(?:experience|experiencia|skills|habilidades|work|proyectos|projects)\b)/i
   );
-  return match?.[1]?.trim() ?? "";
+  if (sectionMatch?.[1]?.trim()) return sectionMatch[1].trim();
+
+  const inlineMatch = text.match(
+    /(?:education|formación|estudios|educación)[:\s]+(.{10,400})/i
+  );
+  return inlineMatch?.[1]?.trim() ?? "";
 }
 
 function extractSummarySection(text: string): string {
-  const match = text.match(
-    /(?:summary|resumen|profile|perfil|about|acerca)[:\s]*\n?([\s\S]{20,600}?)(?:\n\n|\n(?:experience|experiencia|education|formación|skills)\b)/i
+  const sectionMatch = text.match(
+    /(?:summary|resumen|profile|perfil|about|acerca|objetivo)[:\s]*\n([\s\S]{20,800}?)(?:\n\n|\n(?:experience|experiencia|education|formación|skills|habilidades)\b)/i
   );
-  return match?.[1]?.trim() ?? "";
+  if (sectionMatch?.[1]?.trim()) return sectionMatch[1].trim();
+
+  const inlineMatch = text.match(
+    /(?:summary|resumen|perfil profesional)[:\s]+(.{20,600})/i
+  );
+  return inlineMatch?.[1]?.trim() ?? "";
 }
 
 function extractExperienceLines(text: string): CvExperience[] {
-  const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const sectionMatch = text.match(
+    /(?:experience|experiencia|work history|historial laboral|trayectoria)[:\s]*\n([\s\S]{20,4000}?)(?:\n\n|\n(?:education|formación|estudios|skills|habilidades|projects|proyectos)\b)/i
+  );
+  const sectionText = sectionMatch?.[1] ?? text;
+  const lines = sectionText.split(/\n/).map((l) => l.trim()).filter(Boolean);
   const experience: CvExperience[] = [];
   const dashPattern =
+    /^(.+?)\s*(?:@|at|en)\s*(.+?)\s*[—–-]\s*(\d{4}[\s\S]{0,40})$/i;
+  const dashPatternAlt =
     /^(.+?)\s*[—–-]\s*(.+?)\s*[—–-]\s*(\d{4}[\s\S]{0,40})$/;
+  const dateRangePattern =
+    /^(.+?)\s*\|\s*(.+?)\s*\|\s*((?:\d{4}|present|actual|actualidad)[\s\S]{0,40})$/i;
+
+  let current: CvExperience | null = null;
 
   for (const line of lines) {
-    const match = line.match(dashPattern);
-    if (match) {
-      experience.push({
-        role: match[1].trim(),
-        company: match[2].trim(),
-        period: match[3].trim(),
+    const dashMatch = line.match(dashPattern) ?? line.match(dashPatternAlt);
+    const pipeMatch = line.match(dateRangePattern);
+
+    if (dashMatch) {
+      if (current) experience.push(current);
+      current = {
+        role: dashMatch[1].trim(),
+        company: dashMatch[2].trim(),
+        period: dashMatch[3].trim(),
         highlights: [],
-      });
+      };
       if (experience.length >= 8) break;
+      continue;
+    }
+
+    if (pipeMatch) {
+      if (current) experience.push(current);
+      current = {
+        role: pipeMatch[1].trim(),
+        company: pipeMatch[2].trim(),
+        period: pipeMatch[3].trim(),
+        highlights: [],
+      };
+      if (experience.length >= 8) break;
+      continue;
+    }
+
+    if (/^\d{4}\s*[—–-]\s*(?:\d{4}|present|actual)/i.test(line) && current) {
+      current.period = line;
+      continue;
+    }
+
+    if (/^[-•*]\s+/.test(line) && current) {
+      current.highlights.push(line.replace(/^[-•*]\s+/, "").trim());
+      continue;
+    }
+
+    if (
+      line.length > 4 &&
+      line.length < 80 &&
+      !/@|http/i.test(line) &&
+      !current
+    ) {
+      current = { role: line, company: "", period: "", highlights: [] };
     }
   }
 
-  return experience;
+  if (current) experience.push(current);
+  return experience.slice(0, 8);
 }

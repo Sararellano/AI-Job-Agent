@@ -26,7 +26,6 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
-  const extractProfile = formData.get("extractProfile") === "true";
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -112,38 +111,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (extractProfile) {
-    try {
-      const applied = await extractAndApplyCvProfile(
-        supabase,
-        user.id,
-        rawText,
-        parsed,
-        settingsToProfile(existingSettings)
-      );
+  try {
+    const applied = await extractAndApplyCvProfile(
+      supabase,
+      user.id,
+      rawText,
+      parsed,
+      settingsToProfile(existingSettings ?? data)
+    );
 
-      return NextResponse.json({
-        parsed: applied.parsed,
-        skillProfile: applied.skillProfile,
-        cvFileName: file.name,
-        settings: data,
-        profile: applied.profile,
-        cvInstructions: applied.cvInstructions,
-        coverInstructions: applied.coverInstructions,
-        extraction: applied.extraction,
-        aiUsed: applied.ai !== null,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to extract profile";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
+    return NextResponse.json({
+      parsed: applied.parsed,
+      skillProfile: applied.skillProfile,
+      cvFileName: file.name,
+      settings: data,
+      profile: applied.profile,
+      cvInstructions: applied.cvInstructions,
+      coverInstructions: applied.coverInstructions,
+      extraction: applied.extraction,
+      aiUsed: applied.ai !== null,
+    });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to extract profile";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({
-    parsed,
-    skillProfile,
-    cvFileName: file.name,
-    settings: data,
-  });
 }

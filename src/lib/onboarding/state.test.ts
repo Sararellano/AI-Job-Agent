@@ -32,6 +32,7 @@ const BASE_SETTINGS = {
   skill_profile: null,
   question_answers: null,
   ai_cv_analysis: null,
+  cv_profile_extraction: null,
   onboarding_completed: false,
   onboarding_step: 0,
   job_preferences: null,
