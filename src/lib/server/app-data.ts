@@ -4,7 +4,9 @@ import { settingsToOnboarding } from "@/lib/onboarding/state";
 import { isPlaceholderJobUrl } from "@/lib/security/validation";
 import type { Job, JobApplication, JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
-import type { OnboardingState } from "@/types/skills";
+import { resolveCvExtraction } from "@/lib/cv/resolve-cv-extraction";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
+import type { CvProfileExtraction, OnboardingState } from "@/types/skills";
 import {
   DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
@@ -26,6 +28,7 @@ export interface AppUserContext {
   defaultCoverLetterPhotoUrl: string | null;
   defaultCvTemplateId: string;
   defaultCoverTemplateId: string;
+  cvProfileExtraction: CvProfileExtraction;
 }
 
 export async function requireUser() {
@@ -83,6 +86,8 @@ export async function loadAppUserContext(): Promise<AppUserContext | null> {
     defaultCvTemplateId: settings?.default_cv_template_id ?? DEFAULT_CV_TEMPLATE,
     defaultCoverTemplateId:
       settings?.default_cover_letter_template_id ?? DEFAULT_COVER_TEMPLATE,
+    cvProfileExtraction:
+      resolveCvExtraction(settings) ?? normalizeCvProfileExtraction(null),
   };
 }
 

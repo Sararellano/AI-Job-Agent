@@ -2,7 +2,6 @@ import type { CreateJobInput, JobSource } from "@/types/database";
 import type { QuestionAnswer } from "@/types/skills";
 import {
   COVER_LETTER_TEMPLATES,
-  CV_TEMPLATES,
   DEFAULT_COVER_TEMPLATE,
   DEFAULT_CV_TEMPLATE,
 } from "@/types/documents";
@@ -83,7 +82,6 @@ const VALID_STATUSES = new Set([
   "rejected",
 ]);
 
-const CV_TEMPLATE_IDS = new Set(CV_TEMPLATES.map((t) => t.id));
 const COVER_TEMPLATE_IDS = new Set(COVER_LETTER_TEMPLATES.map((t) => t.id));
 
 const ALLOWED_CV_MIME_TYPES = new Set([
@@ -146,12 +144,12 @@ export function resolveTemplateId(
   type: "cv" | "cover_letter",
   templateId: string | undefined
 ): string {
-  const fallback =
-    type === "cv" ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE;
+  if (type === "cv") return DEFAULT_CV_TEMPLATE;
+
+  const fallback = DEFAULT_COVER_TEMPLATE;
   if (!templateId) return fallback;
 
-  const allowed = type === "cv" ? CV_TEMPLATE_IDS : COVER_TEMPLATE_IDS;
-  return allowed.has(templateId) ? templateId : fallback;
+  return COVER_TEMPLATE_IDS.has(templateId) ? templateId : fallback;
 }
 
 export function isAllowedCvUpload(

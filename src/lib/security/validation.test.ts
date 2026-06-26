@@ -65,14 +65,19 @@ describe("sanitizeQuestionAnswers", () => {
 });
 
 describe("resolveTemplateId", () => {
-  it("returns known template ids", () => {
-    expect(resolveTemplateId("cv", "cv-3")).toBe("cv-3");
+  it("always returns ATS template for CV", () => {
+    expect(resolveTemplateId("cv", "cv-3")).toBe("cv-ats");
+    expect(resolveTemplateId("cv", undefined)).toBe("cv-ats");
+  });
+
+  it("returns known cover letter template ids", () => {
     expect(resolveTemplateId("cover_letter", "cl-2")).toBe("cl-2");
   });
 
-  it("falls back to defaults for unknown ids", () => {
-    expect(resolveTemplateId("cv", "evil-template")).toBe("cv-1");
+  it("falls back to defaults for unknown cover letter ids", () => {
+    expect(resolveTemplateId("cv", "evil-template")).toBe("cv-ats");
     expect(resolveTemplateId("cover_letter", undefined)).toBe("cl-1");
+    expect(resolveTemplateId("cover_letter", "evil-template")).toBe("cl-1");
   });
 });
 

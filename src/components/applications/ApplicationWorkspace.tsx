@@ -8,23 +8,26 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { JobWithApplication } from "@/types/database";
 import type { UserProfile } from "@/types/documents";
 import {
-  DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
 import { parseCvContent, parseCoverLetterContent } from "@/lib/documents/parse-content";
 import { GenerateDocumentModal } from "@/components/dashboard/GenerateDocumentModal";
 import { WorkspaceDocumentPanel } from "@/components/applications/WorkspaceDocumentPanel";
+import { CvProfileEditor } from "@/components/dashboard/CvProfileEditor";
+import { mergeCvExtractions } from "@/lib/cv/resolve-cv-extraction";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
+import type { CvProfileExtraction } from "@/types/skills";
 import { useT } from "@/contexts/LocaleProvider";
 import type { DocumentLanguage } from "@/types/documents";
 
 interface ApplicationWorkspaceProps {
   job: JobWithApplication;
   profile: UserProfile;
+  defaultCvExtraction: CvProfileExtraction;
   defaultCvInstructions: string;
   defaultCoverLetterInstructions: string;
   defaultCvPhotoUrl: string | null;
   defaultCoverLetterPhotoUrl: string | null;
-  defaultCvTemplateId: string;
   defaultCoverTemplateId: string;
 }
 
@@ -34,16 +37,28 @@ interface ApplicationWorkspaceProps {
 export function ApplicationWorkspace({
   job: initialJob,
   profile,
+  defaultCvExtraction,
   defaultCvInstructions,
   defaultCoverLetterInstructions,
   defaultCvPhotoUrl,
   defaultCoverLetterPhotoUrl,
-  defaultCvTemplateId,
   defaultCoverTemplateId,
 }: ApplicationWorkspaceProps) {
   const t = useT();
   const [job, setJob] = useState(initialJob);
   const [modalType, setModalType] = useState<"cv" | "cover_letter" | null>(null);
+  const [cvProfileData, setCvProfileData] = useState<CvProfileExtraction>(() =>
+    normalizeCvProfileExtraction(
+      mergeCvExtractions(
+        defaultCvExtraction,
+        job.application?.cv_profile_data
+          ? normalizeCvProfileExtraction(job.application.cv_profile_data)
+          : null
+      ) ?? defaultCvExtraction
+    )
+  );
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
   const cvInstructions =
     job.application?.cv_instructions ?? defaultCvInstructions;
@@ -52,8 +67,6 @@ export function ApplicationWorkspace({
   const cvPhotoUrl = job.application?.cv_photo_url ?? defaultCvPhotoUrl;
   const coverPhotoUrl =
     job.application?.cover_letter_photo_url ?? defaultCoverLetterPhotoUrl;
-  const cvTemplateId =
-    job.application?.cv_template_id ?? defaultCvTemplateId ?? DEFAULT_CV_TEMPLATE;
   const coverTemplateId =
     job.application?.cover_letter_template_id ??
     defaultCoverTemplateId ??
@@ -64,8 +77,36 @@ export function ApplicationWorkspace({
     job.application?.cover_letter_content ?? null
   );
 
+  const displayProfile = cvProfileData.profile;
+
   function handleApplicationUpdate(application: JobWithApplication["application"]) {
     setJob((prev) => ({ ...prev, application }));
+  }
+
+  async function handleSaveCvProfile() {
+    setSavingProfile(true);
+    setProfileMessage(null);
+
+    const res = await fetch("/api/applications/cv-profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId: job.id,
+        cvProfileData,
+      }),
+    });
+
+    setSavingProfile(false);
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        application: JobWithApplication["application"];
+      };
+      handleApplicationUpdate(data.application);
+      setProfileMessage(t("workspace.saved"));
+    } else {
+      setProfileMessage(t("workspace.saveFailed"));
+    }
   }
 
   return (
@@ -102,6 +143,35 @@ export function ApplicationWorkspace({
         </header>
       </ScrollReveal>
 
+      <ScrollReveal delay={40}>
+        <section className="surface-card mb-6 p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">{t("workspace.cvDataTitle")}</h2>
+              <p className="text-xs text-[var(--color-muted)]">
+                {t("workspace.cvDataSubtitle")}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveCvProfile}
+              disabled={savingProfile}
+            >
+              {savingProfile ? t("workspace.saving") : t("workspace.save")}
+            </Button>
+          </div>
+          <CvProfileEditor
+            value={cvProfileData}
+            onChange={setCvProfileData}
+            disabled={savingProfile}
+          />
+          {profileMessage && (
+            <p className="mt-3 text-xs text-[var(--color-muted)]">{profileMessage}</p>
+          )}
+        </section>
+      </ScrollReveal>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <ScrollReveal delay={80}>
           <div>
@@ -109,7 +179,7 @@ export function ApplicationWorkspace({
               <WorkspaceDocumentPanel
                 type="cv"
                 data={cvData}
-                profile={profile}
+                profile={displayProfile}
                 photoUrl={cvPhotoUrl}
                 jobTitle={job.title}
                 company={job.company}
@@ -133,7 +203,7 @@ export function ApplicationWorkspace({
               <WorkspaceDocumentPanel
                 type="cover_letter"
                 data={coverData}
-                profile={profile}
+                profile={displayProfile}
                 photoUrl={coverPhotoUrl}
                 jobTitle={job.title}
                 company={job.company}
@@ -160,9 +230,7 @@ export function ApplicationWorkspace({
             modalType === "cv" ? cvInstructions : coverLetterInstructions
           }
           initialPhotoUrl={modalType === "cv" ? cvPhotoUrl : coverPhotoUrl}
-          initialTemplateId={
-            modalType === "cv" ? cvTemplateId : coverTemplateId
-          }
+          initialTemplateId={coverTemplateId}
           initialDocumentLanguage={
             (job.application?.document_language as DocumentLanguage | null) ?? null
           }

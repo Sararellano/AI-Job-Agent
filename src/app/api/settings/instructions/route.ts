@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { profileToDbFields } from "@/lib/documents/profile";
+import { buildInstructionsFromExtraction } from "@/lib/cv/build-profile-from-parsed";
+import { sanitizeCvProfileExtraction } from "@/lib/cv/sanitize-extraction";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
 import type { UserProfile } from "@/types/documents";
+import type { CvProfileExtraction } from "@/types/skills";
 import {
   resolveTemplateId,
   sanitizeText,
@@ -28,21 +32,26 @@ export async function PUT(request: Request) {
     default_cv_template_id?: string;
     default_cover_letter_template_id?: string;
     profile?: UserProfile;
+    cv_profile_extraction?: CvProfileExtraction;
   };
 
   const profileFields = body.profile
     ? profileToDbFields(sanitizeProfile(body.profile))
     : {};
 
+  const sanitizedExtraction = sanitizeCvProfileExtraction(
+    body.cv_profile_extraction
+  );
+  const cvInstructions = sanitizedExtraction
+    ? buildInstructionsFromExtraction(sanitizedExtraction).cvInstructions
+    : sanitizeText(body.default_cv_instructions, MAX_INSTRUCTIONS_LENGTH);
+
   const { data, error } = await supabase
     .from("user_document_settings")
     .upsert(
       {
         user_id: user.id,
-        default_cv_instructions: sanitizeText(
-          body.default_cv_instructions,
-          MAX_INSTRUCTIONS_LENGTH
-        ),
+        default_cv_instructions: cvInstructions,
         default_cover_letter_instructions: sanitizeText(
           body.default_cover_letter_instructions,
           MAX_INSTRUCTIONS_LENGTH
@@ -57,6 +66,9 @@ export async function PUT(request: Request) {
           "cover_letter",
           body.default_cover_letter_template_id
         ),
+        cv_profile_extraction: sanitizedExtraction
+          ? normalizeCvProfileExtraction(sanitizedExtraction)
+          : undefined,
         ...profileFields,
         updated_at: new Date().toISOString(),
       },

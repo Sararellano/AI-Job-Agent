@@ -54,7 +54,7 @@ export interface CvProfileExtraction {
   profile: import("@/types/documents").UserProfile;
   summary: string;
   experience: import("@/types/documents").CvExperience[];
-  education: string;
+  education: import("@/types/documents").CvEducation[];
   skills: string[];
 }
 

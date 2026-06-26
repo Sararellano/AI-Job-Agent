@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateDocument } from "@/lib/ai/generate-document";
 import { settingsToProfile } from "@/lib/documents/profile";
-import { resolveCvExtraction } from "@/lib/cv/resolve-cv-extraction";
+import { mergeExtractedProfile } from "@/lib/cv/build-profile-from-parsed";
+import {
+  mergeCvExtractions,
+  resolveCvExtraction,
+} from "@/lib/cv/resolve-cv-extraction";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
+import type { CvProfileExtraction } from "@/types/skills";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
   isValidUuid,
@@ -70,7 +76,26 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const profile = settingsToProfile(settings);
-  const cvExtraction = resolveCvExtraction(settings);
+
+  const { data: existing } = await supabase
+    .from("applications")
+    .select("*")
+    .eq("job_id", body.jobId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const appOverride = existing?.cv_profile_data
+    ? normalizeCvProfileExtraction(
+        existing.cv_profile_data as CvProfileExtraction
+      )
+    : null;
+  const cvExtraction = mergeCvExtractions(
+    resolveCvExtraction(settings),
+    appOverride
+  );
+  const generationProfile = cvExtraction
+    ? mergeExtractedProfile(profile, cvExtraction.profile)
+    : profile;
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
@@ -111,7 +136,7 @@ export async function POST(request: Request) {
       },
       instructions,
       photoUrl: body.photoUrl ?? null,
-      profile,
+      profile: generationProfile,
       templateId,
       documentLanguage,
       cvExtraction,
@@ -120,13 +145,6 @@ export async function POST(request: Request) {
     const message = err instanceof Error ? err.message : "Generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const { data: existing } = await supabase
-    .from("applications")
-    .select("*")
-    .eq("job_id", body.jobId)
-    .eq("user_id", user.id)
-    .maybeSingle();
 
   const updatePayload =
     body.type === "cv"

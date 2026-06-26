@@ -1,6 +1,13 @@
-import type { CvExperience } from "@/types/documents";
-import type { UserProfile } from "@/types/documents";
-import { EMPTY_PROFILE } from "@/types/documents";
+import type {
+  CvEducation,
+  CvExperience,
+  UserProfile,
+} from "@/types/documents";
+import {
+  EMPTY_CV_EDUCATION,
+  EMPTY_CV_EXPERIENCE,
+  EMPTY_PROFILE,
+} from "@/types/documents";
 import type { CvProfileExtraction, ParsedCvLocal } from "@/types/skills";
 
 /**
@@ -46,9 +53,6 @@ export function buildProfileFromHeuristics(
   );
   if (languages) profile.languages = languages;
 
-  const education = extractEducationSection(rawText);
-  if (education) profile.additionalInfo = education;
-
   return profile;
 }
 
@@ -80,21 +84,24 @@ export function buildHeuristicExtraction(
   parsed: ParsedCvLocal
 ): CvProfileExtraction {
   const profile = { ...EMPTY_PROFILE, ...buildProfileFromHeuristics(rawText, parsed) };
-  const experience: CvExperience[] =
+  const experience =
     parsed.roles.length > 0
       ? parsed.roles.map((role) => ({
           role: role.title,
           company: role.company ?? "",
           period: role.period ?? "",
-          highlights: [],
+          location: "",
+          highlights: [] as string[],
         }))
       : extractExperienceLines(rawText);
+
+  const education = extractEducationEntries(rawText);
 
   return {
     profile,
     summary: extractSummarySection(rawText),
-    experience,
-    education: extractEducationSection(rawText),
+    experience: experience.length > 0 ? experience : [EMPTY_CV_EXPERIENCE],
+    education: education.length > 0 ? education : [EMPTY_CV_EDUCATION],
     skills: parsed.detectedSkills,
   };
 }
@@ -108,10 +115,13 @@ function formatCvInstructions(extraction: CvProfileExtraction): string {
     sections.push(`\nProfessional summary:\n${extraction.summary}`);
   }
 
-  if (extraction.experience.length > 0) {
+  if (extraction.experience.some((e) => e.role || e.company)) {
     sections.push("\nWork experience:");
     for (const exp of extraction.experience) {
-      const header = [exp.role, exp.company, exp.period].filter(Boolean).join(" — ");
+      if (!exp.role && !exp.company) continue;
+      const header = [exp.role, exp.company, exp.period, exp.location]
+        .filter(Boolean)
+        .join(" — ");
       sections.push(`- ${header}`);
       for (const h of exp.highlights) {
         sections.push(`  • ${h}`);
@@ -123,8 +133,15 @@ function formatCvInstructions(extraction: CvProfileExtraction): string {
     sections.push(`\nSkills: ${extraction.skills.join(", ")}`);
   }
 
-  if (extraction.education) {
-    sections.push(`\nEducation:\n${extraction.education}`);
+  if (extraction.education.some((e) => e.degree || e.institution)) {
+    sections.push("\nEducation:");
+    for (const edu of extraction.education) {
+      if (!edu.degree && !edu.institution) continue;
+      const line = [edu.degree, edu.institution, edu.period, edu.location]
+        .filter(Boolean)
+        .join(" — ");
+      sections.push(`- ${line}`);
+    }
   }
 
   return sections.join("\n").trim();
@@ -142,10 +159,13 @@ function formatCoverInstructions(extraction: CvProfileExtraction): string {
     sections.push(`\nProfessional summary:\n${extraction.summary}`);
   }
 
-  if (extraction.experience.length > 0) {
+  if (extraction.experience.some((e) => e.role || e.company)) {
     sections.push("\nKey experience to reference:");
     for (const exp of extraction.experience.slice(0, 3)) {
-      const header = [exp.role, exp.company, exp.period].filter(Boolean).join(" — ");
+      if (!exp.role && !exp.company) continue;
+      const header = [exp.role, exp.company, exp.period, exp.location]
+        .filter(Boolean)
+        .join(" — ");
       sections.push(`- ${header}`);
       for (const h of exp.highlights.slice(0, 2)) {
         sections.push(`  • ${h}`);
@@ -157,7 +177,7 @@ function formatCoverInstructions(extraction: CvProfileExtraction): string {
     sections.push(`\nRelevant skills: ${extraction.skills.slice(0, 12).join(", ")}`);
   }
 
-  if (!extraction.summary && extraction.experience.length === 0) {
+  if (!extraction.summary && !extraction.experience.some((e) => e.role || e.company)) {
     sections.push(`\nHighlight relevant experience as a ${role}.`);
   }
 
@@ -220,7 +240,7 @@ function extractLabeledValue(text: string, pattern: RegExp): string | null {
   return match?.[1]?.trim().slice(0, 200) ?? null;
 }
 
-function extractEducationSection(text: string): string {
+function extractEducationSectionText(text: string): string {
   const sectionMatch = text.match(
     /(?:education|formación|estudios|academic|educación)[:\s]*\n([\s\S]{10,1200}?)(?:\n\n|\n(?:experience|experiencia|skills|habilidades|work|proyectos|projects)\b)/i
   );
@@ -230,6 +250,56 @@ function extractEducationSection(text: string): string {
     /(?:education|formación|estudios|educación)[:\s]+(.{10,400})/i
   );
   return inlineMatch?.[1]?.trim() ?? "";
+}
+
+function extractEducationEntries(text: string): CvEducation[] {
+  const sectionText = extractEducationSectionText(text);
+  if (!sectionText) return [];
+
+  const lines = sectionText.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const entries: CvEducation[] = [];
+
+  for (const line of lines) {
+    const structured = parseEducationLine(line);
+    if (structured.degree || structured.institution) {
+      entries.push(structured);
+    }
+  }
+
+  return entries.slice(0, 8);
+}
+
+function parseEducationLine(line: string): CvEducation {
+  const dashMatch = line.match(
+    /^(.+?)\s*[—–-]\s*(.+?)\s*[—–-]\s*((?:\d{4}|present|actual)[\s\S]{0,40})$/i
+  );
+  if (dashMatch) {
+    return {
+      degree: dashMatch[1].trim(),
+      institution: dashMatch[2].trim(),
+      period: dashMatch[3].trim(),
+      location: "",
+    };
+  }
+
+  const pipeMatch = line.match(
+    /^(.+?)\s*\|\s*(.+?)\s*\|\s*((?:\d{4}|present|actual)[\s\S]{0,40})$/i
+  );
+  if (pipeMatch) {
+    return {
+      degree: pipeMatch[1].trim(),
+      institution: pipeMatch[2].trim(),
+      period: pipeMatch[3].trim(),
+      location: "",
+    };
+  }
+
+  return {
+    degree: line,
+    institution: "",
+    period: "",
+    location: "",
+  };
 }
 
 function extractSummarySection(text: string): string {
@@ -261,6 +331,14 @@ function extractExperienceLines(text: string): CvExperience[] {
   let current: CvExperience | null = null;
 
   for (const line of lines) {
+    const locationMatch = line.match(
+      /^(?:location|ubicación|ciudad|city)[:\s]+(.+)/i
+    );
+    if (locationMatch && current) {
+      current.location = locationMatch[1].trim();
+      continue;
+    }
+
     const dashMatch = line.match(dashPattern) ?? line.match(dashPatternAlt);
     const pipeMatch = line.match(dateRangePattern);
 
@@ -270,6 +348,7 @@ function extractExperienceLines(text: string): CvExperience[] {
         role: dashMatch[1].trim(),
         company: dashMatch[2].trim(),
         period: dashMatch[3].trim(),
+        location: "",
         highlights: [],
       };
       if (experience.length >= 8) break;
@@ -282,6 +361,7 @@ function extractExperienceLines(text: string): CvExperience[] {
         role: pipeMatch[1].trim(),
         company: pipeMatch[2].trim(),
         period: pipeMatch[3].trim(),
+        location: "",
         highlights: [],
       };
       if (experience.length >= 8) break;
@@ -304,7 +384,13 @@ function extractExperienceLines(text: string): CvExperience[] {
       !/@|http/i.test(line) &&
       !current
     ) {
-      current = { role: line, company: "", period: "", highlights: [] };
+      current = {
+        role: line,
+        company: "",
+        period: "",
+        location: "",
+        highlights: [],
+      };
     }
   }
 

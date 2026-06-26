@@ -5,20 +5,21 @@ import Link from "next/link";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import type { UserProfile } from "@/types/documents";
-import type { OnboardingState } from "@/types/skills";
+import type { CvProfileExtraction, OnboardingState } from "@/types/skills";
 import { DefaultInstructionsSection } from "@/components/dashboard/DefaultInstructionsSection";
 import { CvUploadStep } from "@/components/onboarding/CvUploadStep";
 import { CvQuestionsWizard } from "@/components/onboarding/CvQuestionsWizard";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
 import { useT } from "@/contexts/LocaleProvider";
 
 interface ProfileClientProps {
   profile: UserProfile;
+  cvProfileExtraction: CvProfileExtraction;
   onboarding: OnboardingState;
   defaultCvInstructions: string;
   defaultCoverLetterInstructions: string;
   defaultCvPhotoUrl: string | null;
   defaultCoverLetterPhotoUrl: string | null;
-  defaultCvTemplateId: string;
   defaultCoverTemplateId: string;
 }
 
@@ -27,21 +28,21 @@ interface ProfileClientProps {
  */
 export function ProfileClient({
   profile: initialProfile,
+  cvProfileExtraction: initialCvExtraction,
   onboarding,
   defaultCvInstructions,
   defaultCoverLetterInstructions,
   defaultCvPhotoUrl,
   defaultCoverLetterPhotoUrl,
-  defaultCvTemplateId,
   defaultCoverTemplateId,
 }: ProfileClientProps) {
   const t = useT();
   const [profile, setProfile] = useState(initialProfile);
+  const [cvExtraction, setCvExtraction] = useState(initialCvExtraction);
   const [cvDefaults, setCvDefaults] = useState(defaultCvInstructions);
   const [coverDefaults, setCoverDefaults] = useState(defaultCoverLetterInstructions);
   const [cvPhotoDefault, setCvPhotoDefault] = useState(defaultCvPhotoUrl);
   const [coverPhotoDefault, setCoverPhotoDefault] = useState(defaultCoverLetterPhotoUrl);
-  const [cvTemplateDefault, setCvTemplateDefault] = useState(defaultCvTemplateId);
   const [coverTemplateDefault, setCoverTemplateDefault] = useState(defaultCoverTemplateId);
   const [showCvUpload, setShowCvUpload] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
@@ -110,6 +111,9 @@ export function ProfileClient({
                 setShowCvUpload(false);
                 if (data.profile) {
                   setProfile(data.profile);
+                  if (data.extraction) {
+                    setCvExtraction(normalizeCvProfileExtraction(data.extraction));
+                  }
                   if (data.cvInstructions) setCvDefaults(data.cvInstructions);
                   if (data.coverInstructions) setCoverDefaults(data.coverInstructions);
                   setProfileSyncKey((k) => k + 1);
@@ -136,19 +140,19 @@ export function ProfileClient({
         <DefaultInstructionsSection
           key={profileSyncKey}
           initialProfile={profile}
+          initialCvExtraction={cvExtraction}
           initialCvInstructions={cvDefaults}
           initialCoverLetterInstructions={coverDefaults}
           initialCvPhotoUrl={cvPhotoDefault}
           initialCoverLetterPhotoUrl={coverPhotoDefault}
-          initialCvTemplateId={cvTemplateDefault}
           initialCoverTemplateId={coverTemplateDefault}
           onSaved={(data) => {
             setProfile(data.profile);
+            setCvExtraction(data.cvExtraction);
             setCvDefaults(data.cv);
             setCoverDefaults(data.cover);
             setCvPhotoDefault(data.cvPhoto);
             setCoverPhotoDefault(data.coverPhoto);
-            setCvTemplateDefault(data.cvTemplateId);
             setCoverTemplateDefault(data.coverTemplateId);
           }}
         />

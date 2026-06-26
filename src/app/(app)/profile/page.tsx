@@ -10,12 +10,12 @@ export default async function ProfilePage() {
   return (
     <ProfileClient
       profile={ctx.profile}
+      cvProfileExtraction={ctx.cvProfileExtraction}
       onboarding={ctx.onboarding}
       defaultCvInstructions={ctx.defaultCvInstructions}
       defaultCoverLetterInstructions={ctx.defaultCoverLetterInstructions}
       defaultCvPhotoUrl={ctx.defaultCvPhotoUrl}
       defaultCoverLetterPhotoUrl={ctx.defaultCoverLetterPhotoUrl}
-      defaultCvTemplateId={ctx.defaultCvTemplateId}
       defaultCoverTemplateId={ctx.defaultCoverTemplateId}
     />
   );

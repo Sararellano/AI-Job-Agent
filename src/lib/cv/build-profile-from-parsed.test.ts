@@ -38,13 +38,14 @@ describe("buildHeuristicExtraction", () => {
     expect(extraction.profile.mobile).toContain("600");
     expect(extraction.profile.linkedinUrl).toContain("linkedin.com");
     expect(extraction.profile.githubUrl).toContain("github.com");
-    expect(extraction.skills.length).toBeGreaterThan(0);
+    expect(extraction.experience.length).toBeGreaterThan(0);
 
     const { cvInstructions, coverInstructions } =
       buildInstructionsFromExtraction(extraction);
     expect(cvInstructions).toContain("Work experience");
     expect(cvInstructions).toContain("Skills:");
     expect(coverInstructions).toContain("cover letter");
+    expect(extraction.education[0]?.degree).toContain("Computer Science");
   });
 });
 

@@ -2,6 +2,7 @@ import type { Job } from "@/types/database";
 import type {
   CvDocument,
   CoverLetterDocument,
+  CvEducation,
   DocumentLanguage,
   UserProfile,
 } from "@/types/documents";
@@ -61,78 +62,46 @@ export async function generateDocument(
 
 function buildCvTemplate(input: GenerateDocumentInput): CvDocument {
   const { job, profile, cvExtraction } = input;
-  const es = input.documentLanguage === "es";
-  const name = profile.fullName || (es ? "Tu nombre" : "Your Name");
-  const role = profile.targetRole || job.title;
-  const expectedSalary =
-    profile.salaryRange || job.salary || (es ? "A convenir" : "Open to discussion");
+  const jobSkills = extractSkillsFromJob(job);
+  const cvSkills = cvExtraction?.skills ?? [];
 
-  const jobSkills = extractSkills(job.description);
-  const skills =
-    cvExtraction?.skills?.length
-      ? [...new Set([...cvExtraction.skills, ...jobSkills])]
-      : jobSkills.length > 0
-        ? jobSkills
-        : cvExtraction?.skills ?? [];
+  const skills = [...new Set([...cvSkills, ...jobSkills])];
 
-  const summary = cvExtraction?.summary
-    ? es
-      ? `${cvExtraction.summary} Candidatura para ${job.title} en ${job.company}.`
-      : `${cvExtraction.summary} Applying for ${job.title} at ${job.company}.`
-    : es
-      ? `${name} es ${role} y candidata a ${job.title} en ${job.company}.`
-      : `${name} is a ${role} applying for ${job.title} at ${job.company}.`;
+  const summary = cvExtraction?.summary ?? "";
 
   const experience =
-    cvExtraction?.experience?.length
-      ? cvExtraction.experience
-      : [
-          {
-            role,
-            company: es ? "Empresa anterior" : "Previous Company",
-            period: "2021 — Present",
-            highlights: es
-              ? [
-                  "Entregué funcionalidades alineadas con los requisitos del puesto",
-                  "Colaboré con equipos multidisciplinares",
-                  "Apliqué habilidades relevantes para este rol",
-                ]
-              : [
-                  "Delivered features aligned with job requirements",
-                  "Collaborated with cross-functional teams",
-                  "Applied skills relevant to this role",
-                ],
-          },
-        ];
+    cvExtraction?.experience.filter((e) => e.role || e.company) ?? [];
 
   const education =
-    cvExtraction?.education ||
-    profile.additionalInfo ||
-    (es
-      ? "Grado universitario o experiencia equivalente"
-      : "Bachelor's degree or equivalent experience");
+    cvExtraction?.education.filter((e) => e.degree || e.institution) ?? [];
+
+  const atsKeywords = buildAtsKeywords(skills, job);
 
   return {
     version: 1,
-    templateId: input.templateId ?? DEFAULT_CV_TEMPLATE,
+    templateId: DEFAULT_CV_TEMPLATE,
     summary,
     experience,
-    skills,
+    skills: atsKeywords,
     education,
-    jobHighlights: es
-      ? [
-          `Interés en ${job.title} en ${job.company}`,
-          `Rango salarial: ${expectedSalary}`,
-          ...skills
-            .slice(0, 4)
-            .map((s) => `Experiencia sólida en ${s}`),
-        ]
-      : [
-          `Targeting ${job.title} at ${job.company}`,
-          `Salary range: ${expectedSalary}`,
-          ...skills.slice(0, 4).map((s) => `Strong ${s} experience`),
-        ],
+    jobHighlights: atsKeywords.slice(0, 8).map((keyword) =>
+      input.documentLanguage === "es"
+        ? `Experiencia relevante en ${keyword}`
+        : `Relevant ${keyword} experience`
+    ),
   };
+}
+
+function buildAtsKeywords(
+  cvSkills: string[],
+  job: GenerateDocumentInput["job"]
+): string[] {
+  const jobText = `${job.description} ${job.requirements ?? ""} ${job.title}`;
+  const jobSkills = extractSkillsFromJob(job);
+  return [...new Set([...jobSkills, ...cvSkills])].filter((skill) => {
+    if (jobSkills.includes(skill)) return true;
+    return jobText.toLowerCase().includes(skill.toLowerCase());
+  });
 }
 
 function formatJobContext(job: GenerateDocumentInput["job"]): string {
@@ -148,7 +117,8 @@ function formatJobContext(job: GenerateDocumentInput["job"]): string {
   return lines.join("\n");
 }
 
-function extractSkills(description: string): string[] {
+function extractSkillsFromJob(job: GenerateDocumentInput["job"]): string[] {
+  const text = `${job.description} ${job.requirements ?? ""}`.toLowerCase();
   const keywords = [
     "React",
     "TypeScript",
@@ -161,10 +131,33 @@ function extractSkills(description: string): string[] {
     "AWS",
     "Python",
     "Tailwind",
+    "Vue",
+    "Angular",
+    "Docker",
+    "Kubernetes",
+    "PostgreSQL",
+    "MongoDB",
+    "GraphQL",
+    "REST",
+    "Agile",
+    "Scrum",
+    "Figma",
+    "SEO",
+    "Marketing",
+    "Sales",
   ];
-  return keywords.filter((k) =>
-    description.toLowerCase().includes(k.toLowerCase())
-  );
+  return keywords.filter((k) => text.includes(k.toLowerCase()));
+}
+
+function formatEducationForPrompt(education: CvEducation[]): string {
+  return education
+    .filter((e) => e.degree || e.institution)
+    .map((edu) =>
+      [edu.degree, edu.institution, edu.period, edu.location]
+        .filter(Boolean)
+        .join(" — ")
+    )
+    .join("\n");
 }
 
 function formatCvExtractionForPrompt(
@@ -174,16 +167,20 @@ function formatCvExtractionForPrompt(
 
   const lines: string[] = [
     "REAL CV DATA — use these facts exactly. Do NOT invent employers, dates, or roles.",
+    "Prioritize ATS keywords from the job that match the candidate's real skills.",
   ];
 
   if (extraction.summary) {
     lines.push(`\nProfessional summary:\n${extraction.summary}`);
   }
 
-  if (extraction.experience.length > 0) {
+  if (extraction.experience.some((e) => e.role || e.company)) {
     lines.push("\nWork experience:");
     for (const exp of extraction.experience) {
-      const header = [exp.role, exp.company, exp.period].filter(Boolean).join(" — ");
+      if (!exp.role && !exp.company) continue;
+      const header = [exp.role, exp.company, exp.period, exp.location]
+        .filter(Boolean)
+        .join(" — ");
       lines.push(`- ${header}`);
       for (const h of exp.highlights) {
         lines.push(`  • ${h}`);
@@ -195,8 +192,9 @@ function formatCvExtractionForPrompt(
     lines.push(`\nSkills: ${extraction.skills.join(", ")}`);
   }
 
-  if (extraction.education) {
-    lines.push(`\nEducation:\n${extraction.education}`);
+  const educationText = formatEducationForPrompt(extraction.education);
+  if (educationText) {
+    lines.push(`\nEducation:\n${educationText}`);
   }
 
   return lines.join("\n");
@@ -303,12 +301,15 @@ function buildAiMessages(input: GenerateDocumentInput): {
   const isCv = input.type === "cv";
   const lang = input.documentLanguage ?? "en";
   const langLabel = lang === "es" ? "Spanish" : "English";
-  const templateId =
-    input.templateId ??
-    (isCv ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE);
+  const templateId = isCv ? DEFAULT_CV_TEMPLATE : (input.templateId ?? DEFAULT_COVER_TEMPLATE);
 
   const systemPrompt = isCv
-    ? `You generate CV content as JSON only. Write ALL text fields in ${langLabel}. Use ONLY the candidate's real experience, education and skills from the provided CV data — never invent employers or dates. Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","highlights":[""]}],"skills":[""],"education":"string","jobHighlights":[""]}. No markdown, no code fences.`
+    ? `You generate ATS-friendly CV content as JSON only. Write ALL text fields in ${langLabel}.
+Use ONLY the candidate's real experience, education and skills — never invent employers or dates.
+Use templateId "${templateId}".
+Include job-relevant ATS keywords in skills (merge job requirements with candidate skills).
+Schema: {"version":1,"templateId":"${templateId}","summary":"string","experience":[{"role":"","company":"","period":"","location":"","highlights":[""]}],"skills":[""],"education":[{"degree":"","institution":"","period":"","location":""}],"jobHighlights":[""]}.
+No markdown, no code fences.`
     : `You generate tailored cover letter content as JSON only. Write ALL text fields in ${langLabel}.
 Rules:
 - Write 4-5 substantive paragraphs in the "paragraphs" array.
@@ -320,7 +321,7 @@ Rules:
 Schema: {"version":1,"templateId":"${templateId}","date":"string","greeting":"string","paragraphs":[""],"closing":"string"}. No markdown, no code fences.`;
 
   const photoNote = input.photoUrl
-    ? `Include photo reference in summary if relevant: ${input.photoUrl}`
+    ? `Candidate photo will be shown as a circle in the CV header.`
     : "No photo for this document.";
 
   const profileBlock = formatProfileForPrompt(input.profile);
@@ -350,9 +351,9 @@ function serializeAiOutput(
   raw: string
 ): string {
   const isCv = input.type === "cv";
-  const templateId =
-    input.templateId ??
-    (isCv ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE);
+  const templateId = isCv
+    ? DEFAULT_CV_TEMPLATE
+    : (input.templateId ?? DEFAULT_COVER_TEMPLATE);
 
   const parsed = JSON.parse(raw) as CvDocument | CoverLetterDocument;
   parsed.templateId = templateId;

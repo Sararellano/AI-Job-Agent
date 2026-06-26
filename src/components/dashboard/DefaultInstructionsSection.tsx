@@ -6,50 +6,48 @@ import { cn } from "@/lib/utils";
 import { useT } from "@/contexts/LocaleProvider";
 import { Button } from "@/components/ui/Button";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
-import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
+import { CvProfileEditor } from "@/components/dashboard/CvProfileEditor";
 import type { UserProfile } from "@/types/documents";
+import type { CvProfileExtraction } from "@/types/skills";
 import {
-  CV_TEMPLATES,
   COVER_LETTER_TEMPLATES,
-  DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
 
 interface DefaultInstructionsSectionProps {
   initialProfile: UserProfile;
+  initialCvExtraction: CvProfileExtraction;
   initialCvInstructions: string;
   initialCoverLetterInstructions: string;
   initialCvPhotoUrl?: string | null;
   initialCoverLetterPhotoUrl?: string | null;
-  initialCvTemplateId?: string;
   initialCoverTemplateId?: string;
   onSaved?: (data: {
     profile: UserProfile;
+    cvExtraction: CvProfileExtraction;
     cv: string;
     cover: string;
     cvPhoto: string | null;
     coverPhoto: string | null;
-    cvTemplateId: string;
     coverTemplateId: string;
   }) => void;
 }
 
 /**
- * Dashboard section for shared profile, default instructions and templates.
+ * Dashboard section for shared profile, CV data and cover letter defaults.
  */
 export function DefaultInstructionsSection({
   initialProfile,
+  initialCvExtraction,
   initialCvInstructions,
   initialCoverLetterInstructions,
   initialCvPhotoUrl = null,
   initialCoverLetterPhotoUrl = null,
-  initialCvTemplateId = DEFAULT_CV_TEMPLATE,
   initialCoverTemplateId = DEFAULT_COVER_TEMPLATE,
   onSaved,
 }: DefaultInstructionsSectionProps) {
   const t = useT();
-  const [profile, setProfile] = useState(initialProfile);
-  const [cvInstructions, setCvInstructions] = useState(initialCvInstructions);
+  const [cvExtraction, setCvExtraction] = useState(initialCvExtraction);
   const [coverLetterInstructions, setCoverLetterInstructions] = useState(
     initialCoverLetterInstructions
   );
@@ -57,7 +55,6 @@ export function DefaultInstructionsSection({
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(
     initialCoverLetterPhotoUrl
   );
-  const [cvTemplateId, setCvTemplateId] = useState(initialCvTemplateId);
   const [coverTemplateId, setCoverTemplateId] = useState(initialCoverTemplateId);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -70,12 +67,12 @@ export function DefaultInstructionsSection({
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        profile,
-        default_cv_instructions: cvInstructions,
+        profile: cvExtraction.profile,
+        cv_profile_extraction: cvExtraction,
+        default_cv_instructions: initialCvInstructions,
         default_cover_letter_instructions: coverLetterInstructions,
         default_cv_photo_url: cvPhotoUrl,
         default_cover_letter_photo_url: coverPhotoUrl,
-        default_cv_template_id: cvTemplateId,
         default_cover_letter_template_id: coverTemplateId,
       }),
     });
@@ -85,12 +82,12 @@ export function DefaultInstructionsSection({
     if (res.ok) {
       setMessage(t("defaults.saved"));
       onSaved?.({
-        profile,
-        cv: cvInstructions,
+        profile: cvExtraction.profile,
+        cvExtraction,
+        cv: initialCvInstructions,
         cover: coverLetterInstructions,
         cvPhoto: cvPhotoUrl,
         coverPhoto: coverPhotoUrl,
-        cvTemplateId,
         coverTemplateId,
       });
     } else {
@@ -106,40 +103,16 @@ export function DefaultInstructionsSection({
         {t("defaults.subtitle")}
       </p>
 
-      <UserProfileSection profile={profile} onChange={setProfile} />
+      <CvProfileEditor value={cvExtraction} onChange={setCvExtraction} disabled={saving} />
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <div>
-          <label htmlFor="default-cv" className="mb-2 block text-sm font-medium">
-            {t("defaults.cvInstructions")}
-          </label>
-          <select
-            value={cvTemplateId}
-            onChange={(e) => setCvTemplateId(e.target.value)}
-            className={cn("mb-2", inputClassName)}
-          >
-            {CV_TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} — {t.description}
-              </option>
-            ))}
-          </select>
-          <textarea
-            id="default-cv"
-            rows={5}
-            value={cvInstructions}
-            onChange={(e) => setCvInstructions(e.target.value)}
-            placeholder="e.g. Professional layout, highlight React experience..."
-            className={textareaClassName}
-          />
-          <PhotoUploadField
-            label={t("defaults.cvPhoto")}
-            storagePath="default-cv"
-            photoUrl={cvPhotoUrl}
-            onPhotoChange={setCvPhotoUrl}
-            disabled={saving}
-          />
-        </div>
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
+        <PhotoUploadField
+          label={t("defaults.cvPhoto")}
+          storagePath="default-cv"
+          photoUrl={cvPhotoUrl}
+          onPhotoChange={setCvPhotoUrl}
+          disabled={saving}
+        />
         <div>
           <label htmlFor="default-cover" className="mb-2 block text-sm font-medium">
             {t("defaults.coverInstructions")}
@@ -149,9 +122,9 @@ export function DefaultInstructionsSection({
             onChange={(e) => setCoverTemplateId(e.target.value)}
             className={cn("mb-2", inputClassName)}
           >
-            {COVER_LETTER_TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} — {t.description}
+            {COVER_LETTER_TEMPLATES.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>
+                {tpl.name} — {tpl.description}
               </option>
             ))}
           </select>

@@ -10,18 +10,26 @@ import { DEFAULT_COVER_TEMPLATE, DEFAULT_CV_TEMPLATE } from "@/types/documents";
 
 const sampleCv: CvDocument = {
   version: 1,
-  templateId: "modern",
+  templateId: DEFAULT_CV_TEMPLATE,
   summary: "Experienced developer",
   experience: [
     {
       role: "Developer",
       company: "Acme",
       period: "2020–2024",
+      location: "Madrid",
       highlights: ["Shipped features"],
     },
   ],
   skills: ["TypeScript", "React"],
-  education: "BSc Computer Science",
+  education: [
+    {
+      degree: "BSc Computer Science",
+      institution: "University",
+      period: "2016",
+      location: "",
+    },
+  ],
   jobHighlights: ["Led migration"],
 };
 

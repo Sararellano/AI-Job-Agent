@@ -6,8 +6,9 @@ import { ButtonLink } from "@/components/ui/Button";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useT } from "@/contexts/LocaleProvider";
-import type { AiCvAnalysis, OnboardingState, ParsedCvLocal } from "@/types/skills";
+import type { AiCvAnalysis, CvProfileExtraction, OnboardingState, ParsedCvLocal } from "@/types/skills";
 import type { UserProfile } from "@/types/documents";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
 import { CvUploadStep } from "@/components/onboarding/CvUploadStep";
 import { ParseReviewStep } from "@/components/onboarding/ParseReviewStep";
 import { CvQuestionsWizard } from "@/components/onboarding/CvQuestionsWizard";
@@ -15,12 +16,15 @@ import { ProfileBasicStep } from "@/components/onboarding/ProfileBasicStep";
 
 interface OnboardingClientProps {
   initial: OnboardingState;
-  initialProfile: UserProfile;
+  initialCvExtraction: CvProfileExtraction;
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
 
-export function OnboardingClient({ initial, initialProfile }: OnboardingClientProps) {
+export function OnboardingClient({
+  initial,
+  initialCvExtraction,
+}: OnboardingClientProps) {
   const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>(() => {
@@ -37,14 +41,22 @@ export function OnboardingClient({ initial, initialProfile }: OnboardingClientPr
   );
   const [cvFileName, setCvFileName] = useState(initial.cvFileName);
 
+  const [cvExtraction, setCvExtraction] = useState(
+    normalizeCvProfileExtraction(initialCvExtraction)
+  );
+
   function handleUploaded(data: {
     parsed: ParsedCvLocal;
     skillProfile: unknown[];
     cvFileName: string;
     profile?: UserProfile;
+    extraction?: CvProfileExtraction;
   }) {
     setParsed(data.parsed);
     setCvFileName(data.cvFileName);
+    if (data.extraction) {
+      setCvExtraction(normalizeCvProfileExtraction(data.extraction));
+    }
     setStep(1);
   }
 
@@ -123,7 +135,7 @@ export function OnboardingClient({ initial, initialProfile }: OnboardingClientPr
         {step === 3 && (
           <ScrollReveal delay={80}>
             <ProfileBasicStep
-              initialProfile={initialProfile}
+              initialExtraction={cvExtraction}
               onComplete={handleProfileComplete}
             />
           </ScrollReveal>

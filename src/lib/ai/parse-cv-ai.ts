@@ -1,6 +1,7 @@
 import type { AiCvAnalysis, CareerTrack, CvProfileExtraction, SkillConfidence } from "@/types/skills";
 import type { CvExperience, UserProfile } from "@/types/documents";
 import { EMPTY_PROFILE } from "@/types/documents";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
 import { truncateCvText } from "@/lib/cv/extract-text";
 
 const ANALYSIS_SCHEMA = `{
@@ -23,11 +24,11 @@ const ANALYSIS_SCHEMA = `{
     "githubUrl": "string",
     "extraLink": "string",
     "salaryRange": "string",
-    "additionalInfo": "education and other notes"
+    "additionalInfo": "certifications and other notes"
   },
   "summary": "professional summary paragraph",
-  "experience": [{"role":"string","company":"string","period":"dates","highlights":["bullet"]}],
-  "education": "education section text",
+  "experience": [{"role":"string","company":"string","period":"dates","location":"string","highlights":["bullet"]}],
+  "education": [{"degree":"string","institution":"string","period":"dates","location":"string"}],
   "skills": ["string"]
 }`;
 
@@ -64,8 +65,9 @@ export async function analyzeCvWithAi(
 function buildPrompt(rawText: string): string {
   const excerpt = truncateCvText(rawText).slice(0, 8000);
   return `Analyze this CV and return ONLY valid JSON matching this schema (no markdown).
-Extract ALL contact details, work experience with dates, education, skills and summary from the CV text.
-Use empty strings for missing profile fields. experience.highlights should list key achievements per role.
+Extract ALL contact details, work experience with dates and locations, education, skills and summary from the CV text.
+Use empty strings for any missing field. Do NOT invent employers, dates, institutions or achievements.
+experience.highlights should list key achievements per role when present.
 
 ${ANALYSIS_SCHEMA}
 
@@ -198,7 +200,7 @@ function normalizeProfileExtraction(
     githubUrl: str(profileRaw.githubUrl),
     extraLink: str(profileRaw.extraLink),
     salaryRange: str(profileRaw.salaryRange),
-    additionalInfo: str(profileRaw.additionalInfo) || str(raw.education),
+    additionalInfo: str(profileRaw.additionalInfo),
   };
 
   const experience: CvExperience[] = Array.isArray(raw.experience)
@@ -206,6 +208,7 @@ function normalizeProfileExtraction(
         role: str(exp.role),
         company: str(exp.company),
         period: str(exp.period),
+        location: str(exp.location),
         highlights: Array.isArray(exp.highlights)
           ? (exp.highlights as unknown[]).map((h) => str(h)).filter(Boolean)
           : [],
@@ -216,13 +219,13 @@ function normalizeProfileExtraction(
     ? (raw.skills as unknown[]).map((s) => str(s)).filter(Boolean)
     : [];
 
-  return {
+  return normalizeCvProfileExtraction({
     profile: { ...EMPTY_PROFILE, ...profile },
     summary: str(raw.summary),
     experience,
-    education: str(raw.education),
+    education: raw.education,
     skills,
-  };
+  });
 }
 
 function str(value: unknown): string {

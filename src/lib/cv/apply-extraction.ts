@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { analyzeCvWithAi } from "@/lib/ai/parse-cv-ai";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
 import {
   buildHeuristicExtraction,
   buildInstructionsFromExtraction,
@@ -46,9 +47,11 @@ export async function extractAndApplyCvProfile(
   const ai = await analyzeCvWithAi(rawText);
   const heuristic = buildHeuristicExtraction(rawText, parsed);
 
-  const extraction: CvProfileExtraction = ai?.profileExtraction
-    ? mergeExtractions(heuristic, ai.profileExtraction)
-    : heuristic;
+  const extraction: CvProfileExtraction = normalizeCvProfileExtraction(
+    ai?.profileExtraction
+      ? mergeExtractions(heuristic, ai.profileExtraction)
+      : heuristic
+  );
 
   const baseProfile = existingProfile ?? { ...settingsToProfile(null) };
   const profile = mergeExtractedProfile(baseProfile, extraction.profile);
@@ -118,11 +121,21 @@ function mergeExtractions(
     if (aiVal) profile[key] = aiVal;
   }
 
+  const experience =
+    ai.experience.some((e) => e.role || e.company)
+      ? ai.experience
+      : heuristic.experience;
+
+  const education =
+    ai.education.some((e) => e.degree || e.institution)
+      ? ai.education
+      : heuristic.education;
+
   return {
     profile,
     summary: ai.summary || heuristic.summary,
-    experience: ai.experience.length > 0 ? ai.experience : heuristic.experience,
-    education: ai.education || heuristic.education,
+    experience,
+    education,
     skills: [...new Set([...heuristic.skills, ...ai.skills])],
   };
 }

@@ -132,18 +132,20 @@ export function WorkspaceDocumentPanel({
           {type === "cv" ? t("workspace.cvSection") : t("workspace.coverSection")}
         </h3>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={templateId}
-            onChange={(e) => handleTemplateChange(e.target.value)}
-            className={cn("rounded-lg px-2 py-1.5 text-xs", inputClassName)}
-            aria-label={t("preview.template")}
-          >
-            {templates.map((tmpl) => (
-              <option key={tmpl.id} value={tmpl.id}>
-                {tmpl.name}
-              </option>
-            ))}
-          </select>
+          {type === "cover_letter" && (
+            <select
+              value={templateId}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+              className={cn("rounded-lg px-2 py-1.5 text-xs", inputClassName)}
+              aria-label={t("preview.template")}
+            >
+              {templates.map((tmpl) => (
+                <option key={tmpl.id} value={tmpl.id}>
+                  {tmpl.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <Button
             type="button"

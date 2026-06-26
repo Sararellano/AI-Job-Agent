@@ -1,25 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import type { UserProfile } from "@/types/documents";
 import { Button } from "@/components/ui/Button";
-import { UserProfileSection } from "@/components/dashboard/UserProfileSection";
+import { CvProfileEditor } from "@/components/dashboard/CvProfileEditor";
+import { normalizeCvProfileExtraction } from "@/lib/cv/normalize-extraction";
+import type { CvProfileExtraction } from "@/types/skills";
 import { useT } from "@/contexts/LocaleProvider";
 
 interface ProfileBasicStepProps {
-  initialProfile: UserProfile;
+  initialExtraction: CvProfileExtraction;
   onComplete: () => void;
 }
 
 /**
- * Final onboarding step: save basic profile and mark onboarding complete.
+ * Final onboarding step: save structured profile and mark onboarding complete.
  */
 export function ProfileBasicStep({
-  initialProfile,
+  initialExtraction,
   onComplete,
 }: ProfileBasicStepProps) {
   const t = useT();
-  const [profile, setProfile] = useState(initialProfile);
+  const [extraction, setExtraction] = useState(
+    normalizeCvProfileExtraction(initialExtraction)
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,10 +31,26 @@ export function ProfileBasicStep({
     setSaving(true);
     setError(null);
 
+    const settingsRes = await fetch("/api/settings/instructions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: extraction.profile,
+        cv_profile_extraction: extraction,
+      }),
+    });
+
+    if (!settingsRes.ok) {
+      const data = (await settingsRes.json()) as { error?: string };
+      setSaving(false);
+      setError(data.error ?? t("defaults.saveFailed"));
+      return;
+    }
+
     const res = await fetch("/api/onboarding/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
+      body: JSON.stringify(extraction.profile),
     });
 
     setSaving(false);
@@ -53,13 +72,13 @@ export function ProfileBasicStep({
         {t("onboarding.profileStepSubtitle")}
       </p>
 
-      <UserProfileSection profile={profile} onChange={setProfile} />
+      <CvProfileEditor value={extraction} onChange={setExtraction} disabled={saving} />
 
       {error && (
         <p className="mb-3 text-sm text-[var(--color-danger)]">{error}</p>
       )}
 
-      <Button type="submit" disabled={saving} className="w-full">
+      <Button type="submit" disabled={saving} className="mt-4 w-full">
         {saving ? t("defaults.saving") : t("onboarding.profileSave")}
       </Button>
     </form>

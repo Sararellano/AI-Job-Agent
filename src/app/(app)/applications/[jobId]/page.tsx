@@ -23,11 +23,11 @@ export default async function ApplicationWorkspacePage({ params }: PageProps) {
     <ApplicationWorkspace
       job={job}
       profile={ctx.profile}
+      defaultCvExtraction={ctx.cvProfileExtraction}
       defaultCvInstructions={ctx.defaultCvInstructions}
       defaultCoverLetterInstructions={ctx.defaultCoverLetterInstructions}
       defaultCvPhotoUrl={ctx.defaultCvPhotoUrl}
       defaultCoverLetterPhotoUrl={ctx.defaultCoverLetterPhotoUrl}
-      defaultCvTemplateId={ctx.defaultCvTemplateId}
       defaultCoverTemplateId={ctx.defaultCoverTemplateId}
     />
   );

@@ -7,9 +7,7 @@ import type { Job, JobApplication } from "@/types/database";
 import type { DocumentLanguage } from "@/types/documents";
 import { PhotoUploadField } from "@/components/dashboard/PhotoUploadField";
 import {
-  CV_TEMPLATES,
   COVER_LETTER_TEMPLATES,
-  DEFAULT_CV_TEMPLATE,
   DEFAULT_COVER_TEMPLATE,
 } from "@/types/documents";
 import { useLocale, useT } from "@/contexts/LocaleProvider";
@@ -32,7 +30,7 @@ interface GenerateDocumentModalProps {
 }
 
 /**
- * Modal to customize instructions, template, photo and generate documents.
+ * Modal to customize instructions, photo and generate documents.
  */
 export function GenerateDocumentModal({
   type,
@@ -48,9 +46,8 @@ export function GenerateDocumentModal({
   const { locale } = useLocale();
   const [instructions, setInstructions] = useState(initialInstructions);
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
-  const [templateId, setTemplateId] = useState(
-    initialTemplateId ??
-      (type === "cv" ? DEFAULT_CV_TEMPLATE : DEFAULT_COVER_TEMPLATE)
+  const [coverTemplateId, setCoverTemplateId] = useState(
+    initialTemplateId ?? DEFAULT_COVER_TEMPLATE
   );
   const [documentLanguage, setDocumentLanguage] = useState<DocumentLanguage>(
     initialDocumentLanguage ?? locale
@@ -61,7 +58,6 @@ export function GenerateDocumentModal({
   const title = type === "cv" ? t("generate.createCv") : t("generate.createCover");
   const label =
     type === "cv" ? t("generate.cvInstructions") : t("generate.coverInstructions");
-  const templates = type === "cv" ? CV_TEMPLATES : COVER_LETTER_TEMPLATES;
   const photoStoragePath =
     type === "cv" ? `offers/${job.id}-cv` : `offers/${job.id}-cover`;
 
@@ -77,7 +73,7 @@ export function GenerateDocumentModal({
         type,
         instructions,
         photoUrl,
-        templateId,
+        templateId: type === "cover_letter" ? coverTemplateId : undefined,
         documentLanguage,
       }),
     });
@@ -120,18 +116,22 @@ export function GenerateDocumentModal({
           </Button>
         </div>
 
-        <label className="mb-2 block text-sm font-medium">{t("generate.template")}</label>
-        <select
-          value={templateId}
-          onChange={(e) => setTemplateId(e.target.value)}
-          className={cn("mb-4", inputClassName)}
-        >
-          {templates.map((tpl) => (
-            <option key={tpl.id} value={tpl.id}>
-              {tpl.name}
-            </option>
-          ))}
-        </select>
+        {type === "cover_letter" && (
+          <>
+            <label className="mb-2 block text-sm font-medium">{t("generate.template")}</label>
+            <select
+              value={coverTemplateId}
+              onChange={(e) => setCoverTemplateId(e.target.value)}
+              className={cn("mb-4", inputClassName)}
+            >
+              {COVER_LETTER_TEMPLATES.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
 
         <label className="mb-2 block text-sm font-medium">
           {t("generate.documentLanguage")}

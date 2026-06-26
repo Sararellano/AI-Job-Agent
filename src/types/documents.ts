@@ -16,10 +16,18 @@ export interface UserProfile {
 
 export type DocumentLanguage = "en" | "es";
 
+export interface CvEducation {
+  degree: string;
+  institution: string;
+  period: string;
+  location: string;
+}
+
 export interface CvExperience {
   role: string;
   company: string;
   period: string;
+  location: string;
   highlights: string[];
 }
 
@@ -29,7 +37,7 @@ export interface CvDocument {
   summary: string;
   experience: CvExperience[];
   skills: string[];
-  education: string;
+  education: CvEducation[];
   jobHighlights: string[];
 }
 
@@ -51,14 +59,11 @@ export interface TemplateMeta {
 }
 
 export const CV_TEMPLATES: TemplateMeta[] = [
-  { id: "cv-1", name: "Classic Professional", description: "Two-column with sidebar — default" },
-  { id: "cv-2", name: "Modern Indigo", description: "Bold sidebar accent" },
-  { id: "cv-3", name: "Minimal B&W", description: "Clean monochrome layout" },
-  { id: "cv-4", name: "Creative Accent", description: "Color bar and modern type" },
-  { id: "cv-5", name: "Executive", description: "Dark header, premium feel" },
-  { id: "cv-6", name: "Tech Stack", description: "Developer-focused grid" },
-  { id: "cv-7", name: "Elegant Serif", description: "Refined traditional style" },
-  { id: "cv-8", name: "Compact", description: "Dense single-column" },
+  {
+    id: "cv-ats",
+    name: "ATS Friendly",
+    description: "Single-column black and white layout optimized for ATS parsers",
+  },
 ];
 
 export const COVER_LETTER_TEMPLATES: TemplateMeta[] = [
@@ -67,7 +72,7 @@ export const COVER_LETTER_TEMPLATES: TemplateMeta[] = [
   { id: "cl-3", name: "Informal Friendly", description: "Warm conversational tone" },
 ];
 
-export const DEFAULT_CV_TEMPLATE = "cv-1";
+export const DEFAULT_CV_TEMPLATE = "cv-ats";
 export const DEFAULT_COVER_TEMPLATE = "cl-1";
 
 export const EMPTY_PROFILE: UserProfile = {
@@ -84,4 +89,19 @@ export const EMPTY_PROFILE: UserProfile = {
   extraLink: "",
   salaryRange: "",
   additionalInfo: "",
+};
+
+export const EMPTY_CV_EDUCATION: CvEducation = {
+  degree: "",
+  institution: "",
+  period: "",
+  location: "",
+};
+
+export const EMPTY_CV_EXPERIENCE: CvExperience = {
+  role: "",
+  company: "",
+  period: "",
+  location: "",
+  highlights: [],
 };

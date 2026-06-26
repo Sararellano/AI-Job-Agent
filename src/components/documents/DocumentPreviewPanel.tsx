@@ -99,18 +99,20 @@ export function DocumentPreviewPanel({
 
         {open && (
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={templateId}
-              onChange={(e) => handleTemplateChange(e.target.value)}
-              className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-2 py-1.5 text-xs outline-none"
-              aria-label={t("preview.template")}
-            >
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            {type === "cover_letter" && (
+              <select
+                value={templateId}
+                onChange={(e) => handleTemplateChange(e.target.value)}
+                className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card)] px-2 py-1.5 text-xs outline-none"
+                aria-label={t("preview.template")}
+              >
+                {templates.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <div className="relative">
               <button

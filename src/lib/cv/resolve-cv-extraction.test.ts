@@ -34,6 +34,6 @@ describe("resolveCvExtraction", () => {
     expect(extraction).not.toBeNull();
     expect(extraction?.summary).toContain("8 años");
     expect(extraction?.experience.length).toBeGreaterThan(0);
-    expect(extraction?.education).toContain("Ingeniería");
+    expect(extraction?.education[0]?.degree).toContain("Ingeniería");
   });
 });

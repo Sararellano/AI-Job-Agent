@@ -1,4 +1,4 @@
-import type { CvDocument, CoverLetterDocument, DocumentFormat, UserProfile } from "@/types/documents";
+import type { CvDocument, CoverLetterDocument, CvEducation, DocumentFormat, UserProfile } from "@/types/documents";
 import { getContactPhone } from "@/lib/documents/profile";
 import {
   Document,
@@ -10,6 +10,14 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 import { prepareHtml2CanvasClone, inlineExportStyles } from "@/lib/export/html2canvas-compat";
+
+function formatEducationLines(education: CvEducation[]): string[] {
+  return education
+    .filter((edu) => edu.degree || edu.institution)
+    .map((edu) =>
+      [edu.degree, edu.institution, edu.period, edu.location].filter(Boolean).join(" — ")
+    );
+}
 
 function cvToPlainText(data: CvDocument, profile: UserProfile): string {
   const contactPhone = getContactPhone(profile);
@@ -36,7 +44,7 @@ function cvToPlainText(data: CvDocument, profile: UserProfile): string {
     "",
     "EXPERIENCE",
     ...data.experience.flatMap((e) => [
-      `${e.role} — ${e.company} (${e.period})`,
+      `${e.role} — ${e.company} (${e.period})${e.location ? ` — ${e.location}` : ""}`,
       ...e.highlights.map((h) => `  • ${h}`),
       "",
     ]),
@@ -44,7 +52,7 @@ function cvToPlainText(data: CvDocument, profile: UserProfile): string {
     data.skills.join(", "),
     "",
     "EDUCATION",
-    data.education,
+    ...formatEducationLines(data.education),
   ];
   return lines.filter((l) => l !== undefined).join("\n");
 }
@@ -155,7 +163,9 @@ export async function downloadCvAsDocx(
       new Paragraph({
         children: [
           new TextRun({ text: `${exp.role} — ${exp.company}`, bold: true }),
-          new TextRun({ text: ` (${exp.period})` }),
+          new TextRun({
+            text: ` (${[exp.period, exp.location].filter(Boolean).join(" · ")})`,
+          }),
         ],
       }),
       ...exp.highlights.map(
@@ -169,7 +179,9 @@ export async function downloadCvAsDocx(
     new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Skills")] }),
     new Paragraph({ children: [new TextRun(data.skills.join(", "))] }),
     new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Education")] }),
-    new Paragraph({ children: [new TextRun(data.education)] }),
+    ...formatEducationLines(data.education).map(
+      (line) => new Paragraph({ children: [new TextRun(line)] })
+    ),
   ];
 
   const doc = new Document({ sections: [{ children }] });

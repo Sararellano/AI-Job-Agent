@@ -54,6 +54,7 @@ export interface JobApplication {
   cover_letter_template_id: string | null;
   custom_cv_content: string | null;
   cover_letter_content: string | null;
+  cv_profile_data: Record<string, unknown> | null;
   document_language: string | null;
   created_at: string;
   updated_at: string;

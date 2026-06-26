@@ -12,13 +12,21 @@ const extraction: CvProfileExtraction = {
       role: "Senior Frontend Engineer",
       company: "Capitole",
       period: "2021 — Present",
+      location: "Madrid",
       highlights: [
         "Lideré la migración a Next.js",
         "Integré flujos con APIs de IA",
       ],
     },
   ],
-  education: "Grado en Ingeniería Informática — UPM — 2016",
+  education: [
+    {
+      degree: "Grado en Ingeniería Informática",
+      institution: "UPM",
+      period: "2016",
+      location: "Madrid",
+    },
+  ],
   skills: ["React", "TypeScript", "Next.js", "JavaScript", "Python"],
 };
 
