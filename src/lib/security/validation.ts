@@ -30,6 +30,7 @@ const VALID_JOB_SOURCES = new Set<JobSource>([
   "getmanfred",
   "linkedin",
   "infojobs",
+  "indeed",
   "workable",
   "wellfound",
   "manual",
@@ -239,6 +240,9 @@ export function inferJobSourceFromUrl(url: string): JobSource {
   }
   if (host.includes("infojobs.net")) {
     return "infojobs";
+  }
+  if (host.includes("indeed.")) {
+    return "indeed";
   }
   if (host.includes("workable.com")) {
     return "workable";

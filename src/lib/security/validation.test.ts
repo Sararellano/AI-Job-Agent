@@ -136,6 +136,9 @@ describe("inferJobSourceFromUrl", () => {
     expect(inferJobSourceFromUrl("https://www.linkedin.com/jobs/view/1")).toBe(
       "linkedin"
     );
+    expect(inferJobSourceFromUrl("https://es.indeed.com/viewjob?jk=abc")).toBe(
+      "indeed"
+    );
   });
 });
 

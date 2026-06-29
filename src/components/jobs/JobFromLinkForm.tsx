@@ -8,6 +8,7 @@ import { useT } from "@/contexts/LocaleProvider";
 import { inputClassName, textareaClassName } from "@/lib/ui/input-styles";
 import type { Job } from "@/types/database";
 import type { ScrapedJobDraft } from "@/services/job-scrape";
+import { resolveScrapeErrorMessage } from "@/lib/jobs/scrape-error-message";
 
 interface JobFromLinkFormProps {
   onJobCreated: (job: Job) => void;
@@ -57,7 +58,12 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
       return;
     }
 
-    setMessage(t("newJob.scrapeFailed"));
+    const data = (await res.json()) as {
+      error?: string;
+      code?: string;
+      board?: string | null;
+    };
+    setMessage(resolveScrapeErrorMessage(t, data));
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -148,7 +154,12 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
       )}
 
       {message && (
-        <p className="text-sm text-[var(--color-danger)]">{message}</p>
+        <div className="space-y-1">
+          <p className="text-sm text-[var(--color-danger)]">{message}</p>
+          <p className="text-xs text-[var(--color-muted)]">
+            {t("newJob.scrapeHintDescriptionTab")}
+          </p>
+        </div>
       )}
     </div>
   );

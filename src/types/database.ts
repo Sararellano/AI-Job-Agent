@@ -10,6 +10,7 @@ export type JobSource =
   | "getmanfred"
   | "linkedin"
   | "infojobs"
+  | "indeed"
   | "workable"
   | "wellfound"
   | "manual"
