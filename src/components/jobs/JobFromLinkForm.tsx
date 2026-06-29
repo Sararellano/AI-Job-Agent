@@ -37,11 +37,18 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
     setMessage(null);
     setDraft(null);
 
-    const res = await fetch("/api/jobs/scrape", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
+    let res: Response;
+    try {
+      res = await fetch("/api/jobs/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch {
+      setAnalyzing(false);
+      setMessage(t("newJob.scrapeFailed"));
+      return;
+    }
 
     setAnalyzing(false);
 
@@ -57,7 +64,13 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
       return;
     }
 
-    setMessage(t("newJob.scrapeFailed"));
+    let errorPayload: { error?: string; code?: string } = {};
+    try {
+      errorPayload = (await res.json()) as { error?: string; code?: string };
+    } catch {
+      // ignore: fall back to generic message
+    }
+    setMessage(errorPayload.error ?? t("newJob.scrapeFailed"));
   }
 
   async function handleCreate(e: React.FormEvent) {
