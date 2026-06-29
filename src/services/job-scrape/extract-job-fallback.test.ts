@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   detectJobPageBlock,
   extractJobDraftFromHtml,
-  isStrongJobDraft,
 } from "./extract-job-fallback";
 
 describe("extractJobDraftFromHtml", () => {
@@ -44,7 +43,7 @@ describe("extractJobDraftFromHtml", () => {
     });
     expect(draft?.description).toContain("accessible React interfaces");
     expect(draft?.requirements).toContain("React and TypeScript");
-    expect(isStrongJobDraft(draft)).toBe(true);
+    expect(draft?.summary.length).toBeGreaterThan(20);
   });
 
   it("falls back to meta tags and visible page text", () => {

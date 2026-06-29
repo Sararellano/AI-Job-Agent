@@ -392,7 +392,7 @@ function readSalary(value: unknown): string {
   const valueRecord = nested as Record<string, unknown>;
   const minValue = valueRecord.minValue;
   const maxValue = valueRecord.maxValue;
-  const currency = readString(valueRecord.currency);
+  const currency = readString(salary.currency) || readString(valueRecord.currency);
   const unit = readString(valueRecord.unitText);
 
   const range = [minValue, maxValue].filter((item) => item !== undefined).join(" - ");

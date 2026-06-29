@@ -35,6 +35,7 @@ export async function fetchJobPage(url: string): Promise<string> {
  */
 export function htmlToPlainText(html: string): string {
   return html
+    .replace(/<head[\s\S]*?<\/head>/gi, " ")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
