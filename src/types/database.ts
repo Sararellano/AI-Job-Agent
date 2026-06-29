@@ -11,6 +11,8 @@ export type JobSource =
   | "linkedin"
   | "infojobs"
   | "indeed"
+  | "tecnoempleo"
+  | "glassdoor"
   | "workable"
   | "wellfound"
   | "manual"

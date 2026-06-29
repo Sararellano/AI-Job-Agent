@@ -15,6 +15,9 @@ export type JobBoardId =
   | "linkedin"
   | "infojobs"
   | "indeed"
+  | "tecnoempleo"
+  | "glassdoor"
+  | "remoteco"
   | "generic";
 
 export interface ScrapeJobResult {

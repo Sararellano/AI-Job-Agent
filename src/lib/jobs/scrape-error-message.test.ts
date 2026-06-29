@@ -13,6 +13,14 @@ describe("resolveScrapeErrorMessage", () => {
     expect(message).toContain("LinkedIn");
   });
 
+  it("returns board-specific blocked message for glassdoor", () => {
+    const message = resolveScrapeErrorMessage(t, {
+      code: "FETCH_BLOCKED",
+      board: "glassdoor",
+    });
+    expect(message).toContain("Glassdoor");
+  });
+
   it("falls back to generic parse failure", () => {
     const message = resolveScrapeErrorMessage(t, {
       code: "PARSE_FAILED",

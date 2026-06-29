@@ -7,6 +7,9 @@ const BOARD_BLOCKED_KEYS: Partial<Record<JobBoardId, EnKeys>> = {
   linkedin: "newJob.scrapeError.linkedin.blocked",
   indeed: "newJob.scrapeError.indeed.blocked",
   infojobs: "newJob.scrapeError.infojobs.blocked",
+  tecnoempleo: "newJob.scrapeError.tecnoempleo.blocked",
+  glassdoor: "newJob.scrapeError.glassdoor.blocked",
+  remoteco: "newJob.scrapeError.remoteco.blocked",
 };
 
 const CODE_KEYS: Record<ScrapeErrorCode, EnKeys> = {
@@ -21,12 +24,22 @@ const CODE_KEYS: Record<ScrapeErrorCode, EnKeys> = {
   AI_UNAVAILABLE: "newJob.scrapeError.AI_UNAVAILABLE",
 };
 
+const JOB_BOARD_IDS = new Set<JobBoardId>([
+  "linkedin",
+  "indeed",
+  "infojobs",
+  "tecnoempleo",
+  "glassdoor",
+  "remoteco",
+  "generic",
+]);
+
 function isScrapeErrorCode(value: string): value is ScrapeErrorCode {
   return value in CODE_KEYS;
 }
 
 function isJobBoardId(value: string): value is JobBoardId {
-  return value === "linkedin" || value === "indeed" || value === "infojobs" || value === "generic";
+  return JOB_BOARD_IDS.has(value as JobBoardId);
 }
 
 /**

@@ -1,6 +1,9 @@
+import { isGlassdoorBlocked } from "./adapters/glassdoor";
 import { isIndeedBlocked } from "./adapters/indeed";
 import { isInfoJobsBlocked } from "./adapters/infojobs";
 import { isLinkedInLoginWall } from "./adapters/linkedin";
+import { isRemoteCoBlocked } from "./adapters/remoteco";
+import { isTecnoempleoBlocked } from "./adapters/tecnoempleo";
 import {
   genericJsonLdAdapter,
   resolveJobBoardAdapter,
@@ -61,6 +64,30 @@ function detectBlockedPage(
     return new JobScrapeError(
       "FETCH_BLOCKED",
       "InfoJobs blocked automated access to this page.",
+      { board }
+    );
+  }
+
+  if (board === "tecnoempleo" && isTecnoempleoBlocked(html)) {
+    return new JobScrapeError(
+      "FETCH_BLOCKED",
+      "Tecnoempleo blocked automated access to this page.",
+      { board }
+    );
+  }
+
+  if (board === "glassdoor" && isGlassdoorBlocked(html)) {
+    return new JobScrapeError(
+      "FETCH_BLOCKED",
+      "Glassdoor blocked automated access (sign-in or captcha).",
+      { board }
+    );
+  }
+
+  if (board === "remoteco" && isRemoteCoBlocked(html)) {
+    return new JobScrapeError(
+      "FETCH_BLOCKED",
+      "Remote.co blocked automated access to this page.",
       { board }
     );
   }

@@ -139,6 +139,15 @@ describe("inferJobSourceFromUrl", () => {
     expect(inferJobSourceFromUrl("https://es.indeed.com/viewjob?jk=abc")).toBe(
       "indeed"
     );
+    expect(
+      inferJobSourceFromUrl("https://www.tecnoempleo.com/oferta-empleo-1")
+    ).toBe("tecnoempleo");
+    expect(
+      inferJobSourceFromUrl("https://www.glassdoor.es/job-listing/1")
+    ).toBe("glassdoor");
+    expect(
+      inferJobSourceFromUrl("https://remote.co/remote-jobs/developer/1")
+    ).toBe("remoteco");
   });
 });
 

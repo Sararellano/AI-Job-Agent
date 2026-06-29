@@ -1,14 +1,20 @@
 import { extractJsonLdJobPosting } from "../extract-json-ld";
 import { extractMetaJobData } from "../extract-meta";
 import type { JobBoardAdapter } from "../types";
+import { glassdoorAdapter } from "./glassdoor";
 import { indeedAdapter } from "./indeed";
 import { infoJobsAdapter } from "./infojobs";
 import { linkedInAdapter } from "./linkedin";
+import { remoteCoAdapter } from "./remoteco";
+import { tecnoempleoAdapter } from "./tecnoempleo";
 
 const ADAPTERS: JobBoardAdapter[] = [
   linkedInAdapter,
   infoJobsAdapter,
   indeedAdapter,
+  tecnoempleoAdapter,
+  glassdoorAdapter,
+  remoteCoAdapter,
 ];
 
 /**
@@ -26,4 +32,11 @@ export const genericJsonLdAdapter: JobBoardAdapter = {
   },
 };
 
-export { linkedInAdapter, infoJobsAdapter, indeedAdapter };
+export {
+  glassdoorAdapter,
+  indeedAdapter,
+  infoJobsAdapter,
+  linkedInAdapter,
+  remoteCoAdapter,
+  tecnoempleoAdapter,
+};
