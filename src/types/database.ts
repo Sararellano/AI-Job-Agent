@@ -12,6 +12,14 @@ export type JobSource =
   | "infojobs"
   | "workable"
   | "wellfound"
+  | "indeed"
+  | "glassdoor"
+  | "tecnoempleo"
+  | "jobteaser"
+  | "eurojobs"
+  | "jobtoday"
+  | "talent"
+  | "simplyhired"
   | "manual"
   | "other";
 

@@ -32,6 +32,14 @@ const VALID_JOB_SOURCES = new Set<JobSource>([
   "infojobs",
   "workable",
   "wellfound",
+  "indeed",
+  "glassdoor",
+  "tecnoempleo",
+  "jobteaser",
+  "eurojobs",
+  "jobtoday",
+  "talent",
+  "simplyhired",
   "manual",
   "other",
 ]);
@@ -246,8 +254,32 @@ export function inferJobSourceFromUrl(url: string): JobSource {
   if (host.includes("wellfound.com") || host.includes("angel.co")) {
     return "wellfound";
   }
+  if (host.includes("indeed.com")) {
+    return "indeed";
+  }
+  if (host.includes("glassdoor.com") || host.includes("glassdoor.es")) {
+    return "glassdoor";
+  }
+  if (host.includes("tecnoempleo.com")) {
+    return "tecnoempleo";
+  }
+  if (host.includes("jobteaser.com")) {
+    return "jobteaser";
+  }
+  if (host.includes("eurojobs.com")) {
+    return "eurojobs";
+  }
+  if (host.includes("jobtoday.com")) {
+    return "jobtoday";
+  }
+  if (host.includes("talent.com")) {
+    return "talent";
+  }
+  if (host.includes("simplyhired.com") || host.includes("simplyhired.es")) {
+    return "simplyhired";
+  }
 
-  return "manual";
+  return "other";
 }
 
 /**
