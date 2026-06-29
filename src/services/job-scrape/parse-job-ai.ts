@@ -7,6 +7,11 @@ import {
   MAX_JOB_TITLE_LENGTH,
 } from "@/lib/security/validation";
 import { htmlToPlainText } from "./fetch-job-page";
+import {
+  extractJobDraftFromHtml,
+  isStrongJobDraft,
+  type FallbackJobDraft,
+} from "./extract-job-fallback";
 
 export interface ScrapedJobDraft {
   title: string;
@@ -38,11 +43,22 @@ export async function parseJobWithAi(
 
   const groqKey = process.env.GROQ_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
+  const fallbackDraft = extractJobDraftFromHtml(html, sourceUrl);
+
+  if (isStrongJobDraft(fallbackDraft)) {
+    return fallbackDraft;
+  }
+
+  if (!groqKey && !geminiKey) {
+    return fallbackDraft;
+  }
+
   const prompt = buildPrompt(plain, sourceUrl);
 
   if (groqKey) {
     try {
-      return await callGroq(groqKey, prompt);
+      const aiDraft = await callGroq(groqKey, prompt);
+      return mergeDrafts(aiDraft, fallbackDraft);
     } catch (err) {
       console.error("Groq job parse failed:", err);
     }
@@ -50,13 +66,14 @@ export async function parseJobWithAi(
 
   if (geminiKey) {
     try {
-      return await callGemini(geminiKey, prompt);
+      const aiDraft = await callGemini(geminiKey, prompt);
+      return mergeDrafts(aiDraft, fallbackDraft);
     } catch (err) {
       console.error("Gemini job parse failed:", err);
     }
   }
 
-  return null;
+  return fallbackDraft;
 }
 
 function buildPrompt(text: string, url: string): string {
@@ -137,4 +154,22 @@ function normalizeDraft(raw: Record<string, unknown>): ScrapedJobDraft {
     ),
     salary: sanitizeText(String(raw.salary ?? ""), 100),
   };
+}
+
+function mergeDrafts(
+  aiDraft: ScrapedJobDraft,
+  fallbackDraft: FallbackJobDraft | null
+): ScrapedJobDraft {
+  if (!fallbackDraft) {
+    return aiDraft;
+  }
+
+  return normalizeDraft({
+    title: aiDraft.title || fallbackDraft.title,
+    company: aiDraft.company || fallbackDraft.company,
+    description: aiDraft.description || fallbackDraft.description,
+    summary: aiDraft.summary || fallbackDraft.summary,
+    requirements: aiDraft.requirements || fallbackDraft.requirements,
+    salary: aiDraft.salary || fallbackDraft.salary,
+  });
 }

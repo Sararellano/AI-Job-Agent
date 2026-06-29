@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { isValidJobUrl } from "@/lib/security/validation";
 import { fetchJobPage, parseJobWithAi } from "@/services/job-scrape";
+import { detectJobPageBlock } from "@/services/job-scrape/extract-job-fallback";
 
 const SCRAPE_RATE_LIMIT = 10;
 const SCRAPE_RATE_WINDOW_MS = 60 * 60 * 1_000;
@@ -46,11 +47,42 @@ export async function POST(request: Request) {
 
   try {
     const html = await fetchJobPage(url);
+    const pageBlock = detectJobPageBlock(html);
+
+    if (pageBlock === "login_wall") {
+      return NextResponse.json(
+        {
+          code: "blocked_page",
+          error: "This job page requires login and cannot be read automatically.",
+        },
+        { status: 422 }
+      );
+    }
+
+    if (pageBlock === "bot_blocked") {
+      return NextResponse.json(
+        {
+          code: "blocked_page",
+          error: "This site is blocking automated access to the job page.",
+        },
+        { status: 422 }
+      );
+    }
+
     const draft = await parseJobWithAi(html, url);
 
     if (!draft?.description) {
       return NextResponse.json(
-        { error: "Could not extract job details from this page" },
+        {
+          code:
+            process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY
+              ? "parse_failed"
+              : "no_extractor",
+          error:
+            process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY
+              ? "Could not extract job details from this page."
+              : "No AI provider is configured and this page does not expose enough public job data.",
+        },
         { status: 422 }
       );
     }

@@ -13,6 +13,11 @@ interface JobFromLinkFormProps {
   onJobCreated: (job: Job) => void;
 }
 
+interface ScrapeErrorResponse {
+  error?: string;
+  code?: "blocked_page" | "no_extractor" | "parse_failed";
+}
+
 /**
  * Add a job by pasting a URL — scrapes and parses with AI.
  */
@@ -57,7 +62,15 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
       return;
     }
 
-    setMessage(t("newJob.scrapeFailed"));
+    const data = (await res.json().catch(() => ({}))) as ScrapeErrorResponse;
+    const nextMessage =
+      data.code === "blocked_page"
+        ? t("newJob.scrapeBlocked")
+        : data.code === "no_extractor"
+          ? t("newJob.scrapeNoExtractor")
+          : data.error || t("newJob.scrapeFailed");
+
+    setMessage(nextMessage);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -112,6 +125,9 @@ export function JobFromLinkForm({ onJobCreated }: JobFromLinkFormProps) {
             placeholder="https://..."
             className={inputClassName}
           />
+          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+            {t("newJob.fieldUrlHint")}
+          </p>
         </div>
         <div className="flex items-end">
           <Button type="submit" disabled={analyzing}>
